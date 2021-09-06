@@ -1,0 +1,2 @@
+org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
+  com.fishedee.batch_call.autoconfig.BatchCallAutoConfiguration
