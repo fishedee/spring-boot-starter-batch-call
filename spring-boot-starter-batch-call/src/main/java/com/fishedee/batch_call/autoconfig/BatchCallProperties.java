@@ -7,4 +7,6 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @ConfigurationProperties(prefix="spring.batch-call")
 public class BatchCallProperties {
     private boolean enable;
+
+    private int batchSize = 1000;
 }
