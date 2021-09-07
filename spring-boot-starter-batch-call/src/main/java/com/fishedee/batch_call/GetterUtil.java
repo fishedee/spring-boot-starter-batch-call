@@ -14,7 +14,7 @@ public class GetterUtil {
         }
 
         //其他情况是，name，转换为getName
-        String first = fieldName.substring(0,1);
+        String first = fieldName.substring(0,1).toUpperCase();
         String rest = fieldName.substring(1);
         return "get"+first+rest;
     }

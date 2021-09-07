@@ -19,6 +19,8 @@ public class Task {
 
         private Method callbackMethod;
 
+        private boolean callbackMethodArgumentIsListType;
+
         private Class invokeTarget;
 
         private Method invokeMethod;

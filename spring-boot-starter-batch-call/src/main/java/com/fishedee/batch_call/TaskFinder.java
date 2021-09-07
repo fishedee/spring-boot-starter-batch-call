@@ -1,7 +1,9 @@
 package com.fishedee.batch_call;
 
 import lombok.Data;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.annotation.AnnotationUtils;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -10,11 +12,13 @@ import java.lang.reflect.Modifier;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
+@Slf4j
 public class TaskFinder {
 
+    @Data
     private static class ClassInfo{
-        List<Task.Config> config = new ArrayList<>();
-        List<Method> maybeKeyMethod = new ArrayList<>();
+        private List<Task.Config> config = new ArrayList<>();
+        private List<Method> maybeKeyMethod = new ArrayList<>();
     }
     private final Map<Class, ClassInfo> configMap;
 
@@ -51,7 +55,7 @@ public class TaskFinder {
         return method;
     }
 
-    public Method tryGetterMethod(Class clazz,Field field){
+    private Method tryGetterMethod(Class clazz,Field field){
         try{
             String methodName = GetterUtil.getGetterMethodName(field.getName());
             Method method = clazz.getMethod(methodName);
@@ -73,9 +77,10 @@ public class TaskFinder {
         Class parentClazz = clazz;
         while( parentClazz != Object.class){
             Field[] fields = parentClazz.getDeclaredFields();
+            log.info("{} fields {}",parentClazz,fields);
             for( Field field :fields ){
-                BatchCall batchCall = field.getAnnotation(BatchCall.class);
-                MultipleBatchCall multipleBatchCall = field.getAnnotation(MultipleBatchCall.class);
+                BatchCall batchCall = AnnotationUtils.findAnnotation(field,BatchCall.class);
+                MultipleBatchCall multipleBatchCall = AnnotationUtils.findAnnotation(field,MultipleBatchCall.class);
                 if( batchCall != null || multipleBatchCall != null ){
                     //注意这里一个字段可能同时匹配了BatchCall与MultipleBatchCall
                     if( batchCall != null ){
@@ -111,15 +116,19 @@ public class TaskFinder {
                     if( List.class.isAssignableFrom(fieldClass) ||
                         Set.class.isAssignableFrom(fieldClass) ||
                         Map.class.isAssignableFrom(fieldClass)){
+                        log.info("container {}",fieldClass);
                         //尝试获取对应的方法
                         Method method = tryGetterMethod(clazz,field);
                         if( method == null ){
                             //找不到就略过吧，不用报错，因为这个不是注解的
+                            log.info("tryGetterMethod error {}",fieldClass);
                             continue;
                         }
                         Method method2 = this.isValidKeyMethod(method);
                         if( method2 == null){
                             //不合法就略过吧，不用报错，因为这个不是注解
+                            log.info("isValidKeyMethod error {}",fieldClass);
+
                             continue;
                         }
                         result.maybeKeyMethod.add(method2);
@@ -133,8 +142,8 @@ public class TaskFinder {
     private void calcuateClassMethodInfo(Class clazz,ClassInfo result){
         Method[] methods = clazz.getMethods();
         for( Method method :methods ){
-            BatchCall batchCall = method.getAnnotation(BatchCall.class);
-            MultipleBatchCall multipleBatchCall = method.getAnnotation(MultipleBatchCall.class);
+            BatchCall batchCall = AnnotationUtils.findAnnotation(method,BatchCall.class);
+            MultipleBatchCall multipleBatchCall = AnnotationUtils.findAnnotation(method,MultipleBatchCall.class);
             if( batchCall != null || multipleBatchCall != null ){
                 //注意这里一个方法可能同时匹配了BatchCall与MultipleBatchCall
                 if( batchCall != null ){
@@ -215,6 +224,7 @@ public class TaskFinder {
     private void findInner(String taskName,Object target,List<Task> result){
         Class clazz = target.getClass();
         if( List.class.isAssignableFrom(clazz)){
+            log.info("list type {} classInfo {}",clazz);
             //List类型
             List targetList = (List)target;
             for( Object single : targetList){
@@ -234,8 +244,10 @@ public class TaskFinder {
                 findInner(taskName,single,result);
             }
         }else{
+
             //非集合类型
             ClassInfo classInfo = this.getClassInfo(clazz);
+            log.info("normal type {} classInfo {}",clazz,classInfo);
             //筛选符合taskName的字段
             for(Task.Config config : classInfo.config){
                 if( config.getBatchCall().task().trim().equals(taskName) ) {

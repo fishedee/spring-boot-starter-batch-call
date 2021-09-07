@@ -1,23 +1,30 @@
 package com.fishedee.batch_call.sample;
 
-import com.fishedee.batch_call.BatchCallTask;
 import com.fishedee.batch_call.JsonAssertUtil;
+import com.fishedee.batch_call.Task;
+import com.fishedee.batch_call.TaskFinder;
 import com.fishedee.batch_call.autoconfig.BatchCallAutoConfiguration;
+import lombok.extern.slf4j.Slf4j;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.context.annotation.Import;
-
 import static org.junit.jupiter.api.Assertions.*;
+import java.util.List;
 
 @DataJpaTest
 @Import(BatchCallAutoConfiguration.class)
-public class RecipeDTOTest{
-    @Autowired
-    private BatchCallTask batchCallTask;
+@Slf4j
+public class FinderTest {
 
-    @Test
-    public void basicTest(){
+    @Autowired
+    private TaskFinder finder;
+
+    private RecipeDTO recipeDTO;
+
+    @BeforeEach
+    public void setUp(){
         //初始化数据
         RecipeDTO.Step step = new RecipeDTO.Step();
         step.setUserId(10001);
@@ -29,14 +36,40 @@ public class RecipeDTOTest{
         step4.setUserId(10001);
 
 
-        RecipeDTO recipeDTO = new RecipeDTO();
+        recipeDTO = new RecipeDTO();
         recipeDTO.getStepList().add(step);
         recipeDTO.getStepList().add(step2);
         recipeDTO.getStepList().add(step3);
         recipeDTO.getStepList().add(step4);
-
-        batchCallTask.run("getUserName",recipeDTO);
-
-        JsonAssertUtil.checkEqualNotStrict("{}",recipeDTO);
     }
+
+    @Test
+    public void testBasic(){
+        RecipeDTO.Step step = new RecipeDTO.Step();
+        step.setUserId(10001);
+    }
+
+    @Test
+    public void testMap(){
+
+    }
+
+    @Test
+    public void testSet(){
+
+    }
+
+    @Test
+    public void testList(){
+        List<Task> taskList = finder.find("getUser",recipeDTO);
+
+        assertEquals(taskList.size(),4);
+        for( int i = 0 ;i !=4;i++){
+            assertEquals(recipeDTO.getStepList().get(i),taskList.get(i).getInstance());
+        }
+        for( int i = 0 ;i !=4;i++){
+            assertEquals(recipeDTO.getStepList().get(i).getUserId(),taskList.get(i).getKey());
+        }
+    }
+
 }

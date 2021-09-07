@@ -11,11 +11,11 @@ public class TaskCache {
     @Data
     public static class Result{
         private List<Task> hasCacheTask;
-        private List<Object> cacheResult;
+        private List<List<Object>> cacheResult;
         private List<Task> noCacheTask;
     }
 
-    private Map<Object,Object> cacheMap;
+    private Map<Object,List<Object>> cacheMap;
 
     public TaskCache(){
         this.cacheMap = new HashMap<>();
@@ -23,16 +23,16 @@ public class TaskCache {
 
     public Result getAll(List<Task> tasks){
         List<Task> hasCacheTask= new ArrayList<>();
-        List<Object> cacheResult = new ArrayList<>();
+        List<List<Object>> cacheResult = new ArrayList<>();
         List<Task> noCacheTask = new ArrayList<>();
         for( Task task :tasks){
             Object key = task.getKey();
-            Object cacheData = this.cacheMap.get(key);
+            List<Object> cacheData = this.cacheMap.get(key);
             if( cacheData == null ){
                 noCacheTask.add(task);
             }else{
                 hasCacheTask.add(task);
-                cacheResult.add(task);
+                cacheResult.add(cacheData);
             }
         }
         Result result = new Result();
@@ -42,10 +42,10 @@ public class TaskCache {
         return result;
     }
 
-    public void putAll(List<Task> tasks,List<Object> result){
+    public void putAll(List<Task> tasks,List<List<Object>> result){
         for( int i = 0 ;i != tasks.size();i++){
             Object key = tasks.get(i).getKey();
-            Object value = result.get(i);
+            List<Object> value = result.get(i);
             this.cacheMap.put(key,value);
         }
     }

@@ -15,53 +15,22 @@ public class RecipeDTO {
         private String decription;
 
         @BatchCall(
-                task="getUserName",
-                invokeTarget = UserService.class,
-                invokeMethod = "getBatchUser",
-                callbackMethod = "setUserName"
+                task="getUser",
+                invokeTarget = UserDao.class,
+                invokeMethod = "getBatch",
+                callbackMethod = "setUser"
         )
-        private Long userId;
-
-        private String name;
-
-        public void setUserName(String name){
-            this.name = name;
-        }
-    }
-    private List<Step> stepList = new ArrayList<>();
-
-    @Data
-    public static class Step2{
-
-        private String decription;
-
-        @MultipleBatchCall(
-                {
-                        @BatchCall(
-                                task="getUserName",
-                                invokeTarget = UserService.class,
-                                invokeMethod = "getBatchUser",
-                                callbackMethod = "setUserName"
-                        ),
-                        @BatchCall(
-                                task="getUserLevel",
-                                invokeTarget = UserService.class,
-                                invokeMethod = "getBatchUserLevel",
-                                callbackMethod = "setUserLevel"
-                        )
-                }
-        )
-        private Long userId;
+        private Integer userId;
 
         private String name;
 
         private int level;
 
-        public void setUserName(String name){
-            this.name = name;
+        public void setUser(User user){
+            this.name = user.getName();
+            this.level = user.getLevel();
         }
-
-        public void setUserLevel(int level){this.level = level;}
     }
-    private List<Step2> step2List = new ArrayList<>();
+
+    private List<Step> stepList = new ArrayList<>();
 }

@@ -19,7 +19,10 @@ public class TaskExecutor implements BeanFactoryAware {
     public void setBeanFactory(BeanFactory factory) throws BeansException{
         this.beanFactory = factory;
     }
-    private List<Object> invokeSequenceMatch(Task.Config config,List<Task> tasks){
+
+    public List<Object> invokeSequenceMatch(List<Task> tasks){
+        Task.Config config = tasks.get(0).getConfig();
+
         //聚合数据
         List<Object> invokeArguments = new ArrayList<>();
         for( Task task :tasks){
@@ -28,7 +31,6 @@ public class TaskExecutor implements BeanFactoryAware {
 
         //批量调用
         try {
-
             Object invokeBean = this.beanFactory.getBean(config.getInvokeTarget());
             Object result = config.getInvokeMethod().invoke(invokeBean,invokeArguments);
             //获取结果
@@ -51,16 +53,14 @@ public class TaskExecutor implements BeanFactoryAware {
         }
     }
 
-    private List<Object> invokeKeyMatch(Task.Config config,List<Task> tasks){
+    public List<List<Object>> invokeKeyMatch(List<Task> tasks){
+        Task.Config config = tasks.get(0).getConfig();
+
         //聚合数据
         List<Object> invokeArguments = new ArrayList<>();
         for( Task task :tasks){
             invokeArguments.add(task.getKey());
         }
-
-        //是否允许为空数据
-        boolean allowResultNotFound = config.getBatchCall().allowResultNotFound();
-        String debugName = config.getBatchCall().name();
 
         //批量调用
         try{
@@ -72,18 +72,22 @@ public class TaskExecutor implements BeanFactoryAware {
                 throw new InvalidCallResultException("Call Result size "+resultList.size()+" is not equal to task size "+tasks.size());
             }
             //将结果转换为map
-            Map<Object,Object> mapResult = new HashMap<>();
+            Map<Object,List<Object>> mapResult = new HashMap<>();
             for( Object singleResult : resultList){
                 Object singleResultKey = config.getResultKeyMethod().invoke(result);
-                mapResult.put(singleResultKey,singleResult);
+                List<Object> valueList = mapResult.get(singleResultKey);
+                if( valueList == null ){
+                    valueList = new ArrayList<>();
+                    mapResult.put(singleResultKey,valueList);
+                }
+                valueList.add(singleResult);
             }
             //将结果写入到List
-            List<Object> finalResultList = new ArrayList<>();
+            List<List<Object>> finalResultList = new ArrayList<>();
             for( Task task :tasks ){
-                Object singleResult = mapResult.get(task.getKey());
-                //数据不存在，且不允许为空数据
-                if( singleResult == null && allowResultNotFound == false){
-                    throw new CallResultNotFoundException(debugName,task.getKey());
+                List<Object> singleResult = mapResult.get(task.getKey());
+                if( singleResult == null ){
+                    singleResult = new ArrayList<>();
                 }
                 finalResultList.add(singleResult);
             }
@@ -99,16 +103,6 @@ public class TaskExecutor implements BeanFactoryAware {
             throw new InvokeReflectMethodException(e);
         }catch(IllegalArgumentException e){
             throw new InvokeReflectMethodException(e);
-        }
-    }
-
-    public List<Object> invoke(List<Task> tasks){
-        Task.Config config = tasks.get(0).getConfig();
-        BatchCall batchCall = config.getBatchCall();
-        if( batchCall.resultMatch() == ResultMatch.SEQUENCE){
-            return invokeSequenceMatch(config,tasks);
-        }else{
-            return invokeKeyMatch(config,tasks);
         }
     }
 }

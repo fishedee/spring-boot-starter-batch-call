@@ -41,35 +41,46 @@ public class BatchCallTask {
         taskName = taskName.trim();
         BatchCall batchCall = taskList.get(0).getConfig().getBatchCall();
         boolean cacheEnabled = batchCall.cacheEnabled();
-        boolean isResultKeyMatch = (batchCall.resultMatch() == ResultMatch.KEY);
 
         List<Task> nextStepTask = new ArrayList<>();
-        //开启缓存需要满足两个条件，缓存打开，以及使用key匹配的方式
-        if( cacheEnabled && isResultKeyMatch){
-            //开启缓存
-            TaskCache.Result taskCacheResult = cache.getAll(taskList);
+        if( batchCall.resultMatch() == ResultMatch.KEY){
+            //使用key匹配的方式
+            TaskCache.Result taskCacheResult;
+            if( cacheEnabled ){
+                //开启缓存
+                taskCacheResult = cache.getAll(taskList);
+            }else{
+                //不开启缓存
+                taskCacheResult = new TaskCache.Result();
+                taskCacheResult.setNoCacheTask(taskList);
+                taskCacheResult.setCacheResult(new ArrayList<>());
+                taskCacheResult.setHasCacheTask(new ArrayList<>());
+            }
             if( taskCacheResult.getHasCacheTask().size()!= 0 ){
                 //对有缓存的部分，直接进行数据分发
-                List<Object> dispatchResult = dispatcher.dispatch(taskCacheResult.getHasCacheTask(),taskCacheResult.getCacheResult());
+                List<Object> dispatchResult = dispatcher.dispatchKeyMatch(taskCacheResult.getHasCacheTask(),taskCacheResult.getCacheResult());
                 if( dispatchResult.size() != 0 ){
                     nextStepTask.addAll(finder.find(taskName,dispatchResult));
                 }
             }
             if( taskCacheResult.getNoCacheTask().size() != 0 ){
                 //对没有缓存的部分，先执行批量调用
-                List<Object> result = executor.invoke(taskCacheResult.getNoCacheTask());
-                //将数据放入缓存
-                cache.putAll(taskCacheResult.getNoCacheTask(),result);
+                List<List<Object>> result = executor.invokeKeyMatch(taskCacheResult.getNoCacheTask());
+                if( cacheEnabled ){
+                    //开启缓存的情况下，将数据放入缓存
+                    cache.putAll(taskCacheResult.getNoCacheTask(),result);
+                }
                 //数据分发
-                List<Object> dispatchResult = dispatcher.dispatch(taskCacheResult.getNoCacheTask(),result);
+                List<Object> dispatchResult = dispatcher.dispatchKeyMatch(taskCacheResult.getNoCacheTask(),result);
                 if( dispatchResult.size() != 0 ){
                     nextStepTask.addAll(finder.find(taskName,dispatchResult));
                 }
             }
         }else{
+            //连续匹配的方式，不能开启缓存
             //不开启缓存的话，直接进行批量调用与分发操作
-            List<Object> result = executor.invoke(taskList);
-            List<Object> dispatchResult = dispatcher.dispatch(taskList,result);
+            List<Object> result = executor.invokeSequenceMatch(taskList);
+            List<Object> dispatchResult = dispatcher.dispatchSequenceMatch(taskList,result);
             if( dispatchResult.size() != 0 ){
                 nextStepTask.addAll(finder.find(taskName,dispatchResult));
             }

@@ -36,5 +36,5 @@ public @interface BatchCall {
     String resultMatchKey() default "";
 
     //cacheEnabled
-    boolean cacheEnabled() default true;
+    boolean cacheEnabled() default false;
 }

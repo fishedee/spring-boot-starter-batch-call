@@ -51,13 +51,14 @@ public class TaskChecker {
         return (Class)parameterizedType.getRawType();
     }
 
-    private Method getResultKeyMethod(Class clazz,String keyName){
+    private Method getResultKeyMethod(Type t,String keyName){
         keyName = keyName.trim();
         if( keyName.equals("")){
             throw new InvalidAnnotationExcpetion("resultMatchKey is Empty");
         }
         String keyMethodName = GetterUtil.getGetterMethodName(keyName);
         try{
+            Class clazz = this.getClassOfType(t);
             Method method = clazz.getMethod(keyMethodName);
             return method;
         }catch(NoSuchMethodException e ){
@@ -90,6 +91,42 @@ public class TaskChecker {
         }
     }
 
+    private Method getCallbackMethodListType(Class clazz,String methodName,Type argumentType){
+        try{
+            Method method = clazz.getMethod(methodName,List.class);
+            Type methodArgmentType = method.getGenericParameterTypes()[0];
+            Class methodDeclaringClass = method.getDeclaringClass();
+            GenericActualArgumentExtractor extractor = new GenericActualArgumentExtractor(clazz,methodDeclaringClass);
+            GenericFormalArgumentFiller filler = new GenericFormalArgumentFiller(extractor);
+            ParameterizedType methodGenericArgmentType = (ParameterizedType)filler.fillType(methodArgmentType);
+            Type actualMethodArgumentType = methodGenericArgmentType.getActualTypeArguments()[0];
+            if( actualMethodArgumentType.getTypeName().equals(argumentType.getTypeName()) == false ){
+                throw new InvalidAnnotationExcpetion("methodArgmentType "+actualMethodArgumentType.getTypeName()+" is not equal to invokeMethodReturnType "+argumentType.getTypeName());
+            }
+            return method;
+        }catch(NoSuchMethodException e){
+            return null;
+        }
+    }
+
+    private Method getCallbackMethod(Class clazz,String methodName,Type argumentType){
+        try{
+            Class argumentClass = this.getClassOfType(argumentType);
+            Method method = clazz.getMethod(methodName,argumentClass);
+            Type methodArgmentType = method.getGenericParameterTypes()[0];
+            Class methodDeclaringClass = method.getDeclaringClass();
+            GenericActualArgumentExtractor extractor = new GenericActualArgumentExtractor(clazz,methodDeclaringClass);
+            GenericFormalArgumentFiller filler = new GenericFormalArgumentFiller(extractor);
+            methodArgmentType = filler.fillType(methodArgmentType);
+            if( methodArgmentType.getTypeName().equals(argumentType.getTypeName()) == false ){
+                throw new InvalidAnnotationExcpetion("methodArgmentType "+methodArgmentType.getTypeName()+" is not equal to invokeMethodReturnType "+argumentType.getTypeName());
+            }
+            return method;
+        }catch(NoSuchMethodException e){
+            return null;
+        }
+    }
+
     public Task.Config calcuateConfig(BatchCall annotation, Class clazz, Method getKeyMethod){
         try{
             ResultMatch resultMatch = annotation.resultMatch();
@@ -105,15 +142,32 @@ public class TaskChecker {
 
             //检查批量调用的返回值参数类型，与结果回调参数类型是否匹配
             Type invokeReturnType = getInvokeMethodReturnType(invokeTarget,invokeMethod);
-            Class invokeReturnTypeClass = this.getClassOfType(invokeReturnType);
-            Method callbackMethod = clazz.getMethod(annotation.callbackMethod(),invokeReturnTypeClass);
-
+            boolean callbackMethodArgumentIsListType = false;
+            Method callbackMethod = null;
+            callbackMethod = this.getCallbackMethod(clazz,annotation.callbackMethod(),invokeReturnType);
+            if( callbackMethod != null ){
+                //callback方法非List类型的
+                callbackMethodArgumentIsListType = false;
+            }else{
+                if( resultMatch == ResultMatch.KEY ){
+                    //KEY匹配类型，允许使用List参数
+                    callbackMethod = this.getCallbackMethodListType(clazz, annotation.callbackMethod(), invokeReturnType);
+                    if( callbackMethod != null ){
+                        callbackMethodArgumentIsListType = true;
+                    }else{
+                        throw new InvalidAnnotationExcpetion("Could not found callback method "+clazz.getName()+" : "+annotation.callbackMethod()+" or argument do not match");
+                    }
+                }else{
+                    //顺序匹配类型，不允许使用List参数
+                    throw new InvalidAnnotationExcpetion("Could not found callback method "+clazz.getName()+" : "+annotation.callbackMethod()+" or argument do not match");
+                }
+            }
 
             //检查key类型是否重写了equals与hashCode，并获取resultKeyMethod
             Method resultKeyMethod = null;
             if( resultMatch == ResultMatch.KEY ){
                 checkKeyTypeHashValid(keyType);
-                resultKeyMethod = this.getResultKeyMethod(invokeReturnTypeClass,annotation.resultMatchKey());
+                resultKeyMethod = this.getResultKeyMethod(invokeReturnType,annotation.resultMatchKey());
                 Class resultKeyType = resultKeyMethod.getReturnType();
                 if( resultKeyType.getTypeName().equals(keyType.getTypeName()) == false){
                     throw new InvalidAnnotationExcpetion(resultKeyMethod.getName()+" return type is not equal "+keyType.getTypeName());
@@ -125,6 +179,7 @@ public class TaskChecker {
             result.setClazz(clazz);
             result.setGetKeyMethod(getKeyMethod);
             result.setCallbackMethod(callbackMethod);
+            result.setCallbackMethodArgumentIsListType(callbackMethodArgumentIsListType);
             result.setInvokeTarget(invokeTarget);
             result.setInvokeMethod(invokeMethod);
             result.setResultKeyMethod(resultKeyMethod);
