@@ -5,7 +5,7 @@ public class BatchCallException extends RuntimeException{
         super(message);
     }
 
-    public BatchCallException(String message,Exception e){
+    public BatchCallException(String message,Throwable e){
         super(message,e);
     }
 }

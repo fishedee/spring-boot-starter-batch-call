@@ -82,11 +82,11 @@ public class TaskFinder {
                         //找到了一个BatchCall
                         Method method = this.tryGetterMethod(clazz,field);
                         if( method == null ){
-                            throw new BatchCallException("Could not found @BachCall "+ clazz.getName() +" -> "+field.getName()+" getter" );
+                            throw new InvalidAnnotationExcpetion("Could not found @BachCall "+ clazz.getName() +" -> "+field.getName()+" getter" );
                         }
                         Method method2 = this.isValidKeyMethod(method);
                         if( method2 == null){
-                            throw new BatchCallException("@BachCall "+ clazz.getName() +" -> "+method.getName()+" is invalid " );
+                            throw new InvalidAnnotationExcpetion("@BachCall "+ clazz.getName() +" -> "+method.getName()+" is invalid " );
                         }
                         Task.Config config = calcuateConfig(batchCall,clazz,method2);
                         result.config.add(config);
@@ -95,11 +95,11 @@ public class TaskFinder {
                         //找到了一个MultiplyBatchCall
                         Method method = tryGetterMethod(clazz,field);
                         if( method == null ){
-                            throw new BatchCallException("Could not found @MultipleBatchCall "+ clazz.getName() +" -> "+field.getName()+" getter or it is invalid" );
+                            throw new InvalidAnnotationExcpetion("Could not found @MultipleBatchCall "+ clazz.getName() +" -> "+field.getName()+" getter or it is invalid" );
                         }
                         Method method2 = this.isValidKeyMethod(method);
                         if( method2 == null){
-                            throw new BatchCallException("@BachCall "+ clazz.getName() +" -> "+method.getName()+" is invalid " );
+                            throw new InvalidAnnotationExcpetion("@BachCall "+ clazz.getName() +" -> "+method.getName()+" is invalid " );
                         }
                         List<Task.Config> config = calcuateMultiplyConfig(multipleBatchCall,clazz,method2);
                         result.config.addAll(config);
@@ -141,7 +141,7 @@ public class TaskFinder {
                     //找到了一个BatchCall
                     Method method2 = isValidKeyMethod(method);
                     if( method2 == null ){
-                        throw new BatchCallException("@BachCall "+ clazz.getName() +" -> "+method.getName()+" is invalid" );
+                        throw new InvalidAnnotationExcpetion("@BachCall "+ clazz.getName() +" -> "+method.getName()+" is invalid" );
                     }
                     Task.Config config = calcuateConfig(batchCall,clazz,method2);
                     result.config.add(config);
@@ -149,7 +149,7 @@ public class TaskFinder {
                 if( multipleBatchCall != null){
                     Method method2 = isValidKeyMethod(method);
                     if( method2 == null ){
-                        throw new BatchCallException("@MultipleBatchCall "+ clazz.getName() +" -> "+method.getName()+" is invalid" );
+                        throw new InvalidAnnotationExcpetion("@MultipleBatchCall "+ clazz.getName() +" -> "+method.getName()+" is invalid" );
                     }
                     //找到了一个MultiplyBatchCall
                     List<Task.Config> config = calcuateMultiplyConfig(multipleBatchCall,clazz,method2);
@@ -190,18 +190,25 @@ public class TaskFinder {
 
 
     private void addResult(List<Task> result,Task.Config config,Object instance){
-        Method keyMethod = config.getKeyMethod;
+        Method keyMethod = config.getGetKeyMethod();
         try{
             Object key = keyMethod.invoke(instance);
             Task task = new Task();
-            task.key = key;
-            task.instance = instance;
-            task.config = config;
+            task.setKey(key);
+            task.setInstance(instance);
+            task.setConfig(config);
             result.add(task);
         }catch( InvocationTargetException e){
-            throw (RuntimeException)e.getCause();
-        }catch( Exception e){
-            throw new BatchCallException("invoke method error ",e);
+            Throwable cause = e.getCause();
+            if( cause instanceof  RuntimeException){
+                throw (RuntimeException)cause;
+            }else{
+                throw new InvokeReflectMethodException(cause);
+            }
+        }catch( IllegalAccessException e){
+            throw new InvokeReflectMethodException(e);
+        }catch( IllegalArgumentException e){
+            throw new InvokeReflectMethodException(e);
         }
     }
 
@@ -231,7 +238,7 @@ public class TaskFinder {
             ClassInfo classInfo = this.getClassInfo(clazz);
             //筛选符合taskName的字段
             for(Task.Config config : classInfo.config){
-                if( config.batchCall.task().equals(taskName) ) {
+                if( config.getBatchCall().task().trim().equals(taskName) ) {
                     addResult(result, config, target);
                 }
             }
@@ -242,9 +249,16 @@ public class TaskFinder {
                     //嵌套进去继续查找
                     findInner(taskName,nestedTarget,result);
                 }catch(InvocationTargetException e){
-                    throw (RuntimeException)e.getCause();
-                }catch(Exception e){
-                    throw new BatchCallException("invoke method error",e);
+                    Throwable cause = e.getCause();
+                    if( cause instanceof RuntimeException){
+                        throw (RuntimeException)cause;
+                    }else{
+                        throw new InvokeReflectMethodException(cause);
+                    }
+                }catch(IllegalArgumentException e){
+                    throw new InvokeReflectMethodException(e);
+                }catch(IllegalAccessException e){
+                    throw new InvokeReflectMethodException(e);
                 }
             }
         }

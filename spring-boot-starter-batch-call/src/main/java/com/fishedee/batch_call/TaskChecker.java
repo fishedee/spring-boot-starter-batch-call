@@ -135,6 +135,15 @@ public class TaskChecker {
     }
 
     public void check(List<Task> taskList){
-
+        String lastType = "";
+        for( Task task :taskList){
+            Task.Config config = task.getConfig();
+            String typeName = config.getClazz().getName()+"_"+config.getGetKeyMethod().getName();
+            if( lastType.equals("")){
+                lastType =typeName;
+            }else if( lastType.equals(typeName) == false ){
+                throw new NotSupportMultiplyTypeException();
+            }
+        }
     }
 }

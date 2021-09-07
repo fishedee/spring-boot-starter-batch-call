@@ -10,29 +10,25 @@ import java.util.List;
 public class Task {
     @Data
     public static class Config{
-        BatchCall batchCall;
+        private BatchCall batchCall;
 
-        Class clazz;
+        private Class clazz;
 
         //字段最终也是转换为方法获取的，所以field也是方法
-        Method getKeyMethod;
+        private Method getKeyMethod;
 
-        Method callbackMethod;
+        private Method callbackMethod;
 
-        Class invokeTarget;
+        private Class invokeTarget;
 
-        Method invokeMethod;
+        private Method invokeMethod;
 
-        Method resultKeyMethod;
+        private Method resultKeyMethod;
     }
 
-    Object instance;
+    private Object instance;
 
-    Object key;
+    private Object key;
 
-    Config config;
-
-    public String getConfigIdentityName(){
-        return this.config.clazz.getName()+"_"+this.config.getKeyMethod.getName();
-    }
+    private Config config;
 }

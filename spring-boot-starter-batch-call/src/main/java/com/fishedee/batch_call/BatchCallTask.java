@@ -38,7 +38,8 @@ public class BatchCallTask {
     }
 
     private List<Task> singleBatch(List<Task> taskList,TaskCache cache,String taskName){
-        BatchCall batchCall = taskList.get(0).getConfig().batchCall;
+        taskName = taskName.trim();
+        BatchCall batchCall = taskList.get(0).getConfig().getBatchCall();
         boolean cacheEnabled = batchCall.cacheEnabled();
         boolean isResultKeyMatch = (batchCall.resultMatch() == ResultMatch.KEY);
 
@@ -47,20 +48,20 @@ public class BatchCallTask {
         if( cacheEnabled && isResultKeyMatch){
             //开启缓存
             TaskCache.Result taskCacheResult = cache.getAll(taskList);
-            if( taskCacheResult.hasCacheTask.size()!= 0 ){
+            if( taskCacheResult.getHasCacheTask().size()!= 0 ){
                 //对有缓存的部分，直接进行数据分发
-                List<Object> dispatchResult = dispatcher.dispatch(taskCacheResult.hasCacheTask,taskCacheResult.cacheResult);
+                List<Object> dispatchResult = dispatcher.dispatch(taskCacheResult.getHasCacheTask(),taskCacheResult.getCacheResult());
                 if( dispatchResult.size() != 0 ){
                     nextStepTask.addAll(finder.find(taskName,dispatchResult));
                 }
             }
-            if( taskCacheResult.noCacheTask.size() != 0 ){
+            if( taskCacheResult.getNoCacheTask().size() != 0 ){
                 //对没有缓存的部分，先执行批量调用
-                List<Object> result = executor.invoke(taskCacheResult.noCacheTask);
+                List<Object> result = executor.invoke(taskCacheResult.getNoCacheTask());
                 //将数据放入缓存
-                cache.putAll(taskCacheResult.noCacheTask,result);
+                cache.putAll(taskCacheResult.getNoCacheTask(),result);
                 //数据分发
-                List<Object> dispatchResult = dispatcher.dispatch(taskCacheResult.noCacheTask,result);
+                List<Object> dispatchResult = dispatcher.dispatch(taskCacheResult.getNoCacheTask(),result);
                 if( dispatchResult.size() != 0 ){
                     nextStepTask.addAll(finder.find(taskName,dispatchResult));
                 }
@@ -86,7 +87,7 @@ public class BatchCallTask {
             checker.check(taskList);
 
             //获取批次大小
-            BatchCall batchCall = taskList.get(0).getConfig().batchCall;
+            BatchCall batchCall = taskList.get(0).getConfig().getBatchCall();
             int batchSize = this.getBatchSize(batchCall);
             List<Task> nextStepTask = new ArrayList<>();
 
