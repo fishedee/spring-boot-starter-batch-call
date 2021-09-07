@@ -68,13 +68,10 @@ public class TaskExecutor implements BeanFactoryAware {
             Object result = config.getInvokeMethod().invoke(invokeBean,invokeArguments);
             //获取结果
             List<Object> resultList = (List<Object>)result;
-            if( resultList.size() != tasks.size() ){
-                throw new InvalidCallResultException("Call Result size "+resultList.size()+" is not equal to task size "+tasks.size());
-            }
             //将结果转换为map
             Map<Object,List<Object>> mapResult = new HashMap<>();
             for( Object singleResult : resultList){
-                Object singleResultKey = config.getResultKeyMethod().invoke(result);
+                Object singleResultKey = config.getResultKeyMethod().invoke(singleResult);
                 List<Object> valueList = mapResult.get(singleResultKey);
                 if( valueList == null ){
                     valueList = new ArrayList<>();

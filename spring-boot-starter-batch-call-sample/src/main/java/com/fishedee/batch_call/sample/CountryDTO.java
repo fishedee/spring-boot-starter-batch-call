@@ -9,19 +9,14 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Data
-public class RecipeDTO {
+public class CountryDTO {
     @Data
     public static class Step{
-
-        private String decription;
-
         @BatchCall(
-                task="getUser",
+                task="addUser",
                 invokeTarget = UserDao.class,
-                invokeMethod = "getBatch",
-                callbackMethod = "setUser",
-                resultMatch = ResultMatch.KEY,
-                resultMatchKey = "id"
+                invokeMethod = "insertBatch",
+                callbackMethod = "addFinish"
         )
         private Integer userId;
 
@@ -29,11 +24,10 @@ public class RecipeDTO {
 
         private int level;
 
-        public void setUser(User user){
-            this.name = user.getName();
-            this.level = user.getLevel();
+        private void addFinish(){
+
         }
     }
 
-    private List<Step> stepList = new ArrayList<>();
+    private List<User> userList = new ArrayList<>();
 }

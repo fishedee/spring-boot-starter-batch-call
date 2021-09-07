@@ -6,11 +6,16 @@ import com.fishedee.batch_call.autoconfig.BatchCallAutoConfiguration;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.FilterType;
 import org.springframework.context.annotation.Import;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-@DataJpaTest
+@DataJpaTest(includeFilters = @ComponentScan.Filter(
+        type= FilterType.ASSIGNABLE_TYPE,
+        classes = {UserDao.class}
+))
 @Import(BatchCallAutoConfiguration.class)
 public class RecipeDTOTest{
     @Autowired
@@ -35,7 +40,7 @@ public class RecipeDTOTest{
         recipeDTO.getStepList().add(step3);
         recipeDTO.getStepList().add(step4);
 
-        batchCallTask.run("getUserName",recipeDTO);
+        batchCallTask.run("getUser",recipeDTO);
 
         JsonAssertUtil.checkEqualNotStrict("{}",recipeDTO);
     }
