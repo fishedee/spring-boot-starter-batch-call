@@ -8,6 +8,7 @@ import java.util.List;
 
 @Data
 public class Task {
+    @Data
     public static class Config{
         BatchCall batchCall;
 
@@ -21,7 +22,10 @@ public class Task {
         Class invokeTarget;
 
         Method invokeMethod;
+
+        Method resultKeyMethod;
     }
+
     Object instance;
 
     Object key;

@@ -1,6 +1,7 @@
 package com.fishedee.batch_call;
 
 import lombok.Data;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -17,20 +18,25 @@ public class TaskFinder {
     }
     private final Map<Class, ClassInfo> configMap;
 
+    @Autowired
+    private TaskChecker taskChecker;
+
     public TaskFinder(){
         this.configMap = new ConcurrentHashMap<>();
     }
 
-    private Task.Config calcuateConfig(BatchCall batchCall,Class clazz,Method method){
-        //FIXME
-        return null;
+    private Task.Config calcuateConfig(BatchCall annotation,Class clazz,Method method){
+        return taskChecker.calcuateConfig(annotation,clazz,method);
     }
 
-    private List<Task.Config> calcuateMultiplyConfig(MultipleBatchCall batchCall,Class clazz,Method method){
-        //FIXME
-        return null;
+    private List<Task.Config> calcuateMultiplyConfig(MultipleBatchCall annotation,Class clazz,Method method){
+        BatchCall[] batchCalls = annotation.value();
+        List<Task.Config> result = new ArrayList<>();
+        for( BatchCall single : batchCalls){
+            result.add(this.calcuateConfig(single,clazz,method));
+        }
+        return result;
     }
-
 
     private Method isValidKeyMethod(Method method){
         //方法必须为0参数
@@ -183,8 +189,20 @@ public class TaskFinder {
     }
 
 
-    private void addResult(List<Task> result,Task.Config config,Object target){
-        //FIXME
+    private void addResult(List<Task> result,Task.Config config,Object instance){
+        Method keyMethod = config.getKeyMethod;
+        try{
+            Object key = keyMethod.invoke(instance);
+            Task task = new Task();
+            task.key = key;
+            task.instance = instance;
+            task.config = config;
+            result.add(task);
+        }catch( InvocationTargetException e){
+            throw (RuntimeException)e.getCause();
+        }catch( Exception e){
+            throw new BatchCallException("invoke method error ",e);
+        }
     }
 
     private void findInner(String taskName,Object target,List<Task> result){
