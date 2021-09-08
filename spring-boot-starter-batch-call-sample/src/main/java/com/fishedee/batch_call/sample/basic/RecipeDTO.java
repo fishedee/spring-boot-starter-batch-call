@@ -1,9 +1,10 @@
-package com.fishedee.batch_call.sample;
+package com.fishedee.batch_call.sample.basic;
 
 import com.fishedee.batch_call.BatchCall;
-import com.fishedee.batch_call.MultipleBatchCall;
 import com.fishedee.batch_call.ResultMatch;
+import com.fishedee.batch_call.sample.User;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -11,6 +12,7 @@ import java.util.List;
 @Data
 public class RecipeDTO {
     @Data
+    @EqualsAndHashCode
     public static class Step{
 
         private String decription;

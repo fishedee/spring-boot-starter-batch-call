@@ -1,5 +1,7 @@
-package com.fishedee.batch_call.sample;
+package com.fishedee.batch_call.sample.basic;
 
+import com.fishedee.batch_call.sample.SqlUtil;
+import com.fishedee.batch_call.sample.User;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
@@ -23,7 +25,7 @@ public class UserDao {
 
     //从id转换为name
     public List<User> getBatch(List<Integer> userIds){
-        return this.jdbcTemplate.query("select * from user where id in "+SqlUtil.getQuestionSql(userIds),
+        return this.jdbcTemplate.query("select * from user where id in "+ SqlUtil.getQuestionSql(userIds),
                 SqlUtil.getArgumentArray(userIds),
                 SqlUtil.getTypeArray(userIds,Types.INTEGER),
                 new BeanPropertyRowMapper<>(User.class));

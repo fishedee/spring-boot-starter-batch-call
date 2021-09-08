@@ -21,11 +21,12 @@ public class Task {
 
         private boolean callbackMethodArgumentIsListType;
 
+        private boolean callbackMethodArgumentIsEmpty;
+
         private Class invokeTarget;
 
         private Method invokeMethod;
 
-        private boolean callbackMethodArgumentIsEmpty;
 
         private Method resultKeyMethod;
     }

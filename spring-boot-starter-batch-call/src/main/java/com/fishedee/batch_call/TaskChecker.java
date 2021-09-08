@@ -2,6 +2,7 @@ package com.fishedee.batch_call;
 
 import com.fishedee.reflection_boost.GenericActualArgumentExtractor;
 import com.fishedee.reflection_boost.GenericFormalArgumentFiller;
+import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 
 import java.lang.reflect.InvocationTargetException;
@@ -26,15 +27,17 @@ public class TaskChecker {
         if( rawType != List.class){
             throw new InvalidAnnotationExcpetion(method.getName()+" argument type must be List<xxx> generic Type");
         }
-        return parameterizedType.getActualTypeArguments()[0];
+        return filler.fillType(parameterizedType.getActualTypeArguments()[0]);
     }
+
     private Type getInvokeMethodReturnType(Class clazz,Method method){
         Class declaringClass = method.getDeclaringClass();
         GenericActualArgumentExtractor extractor = new GenericActualArgumentExtractor(clazz,declaringClass);
         GenericFormalArgumentFiller filler = new GenericFormalArgumentFiller(extractor);
         Type returnType = method.getGenericReturnType();
         Type realReturnType = filler.fillType(returnType);
-        if( realReturnType.getTypeName().equals("void") ){
+        if( realReturnType == void.class ||
+            realReturnType == Void.class ){
             return null;
         }
         if( realReturnType instanceof ParameterizedType == false ){
@@ -96,6 +99,47 @@ public class TaskChecker {
         }
     }
 
+    @Data
+    public static class CallbackInfo{
+        private Method callbackMethod;
+        private boolean callbackMethodArgumentIsListType;
+    }
+    private CallbackInfo getCallbackMethodForMatchKey(Class clazz,String methodName,Type argumentType){
+        CallbackInfo result = new CallbackInfo();
+
+        InvalidAnnotationExcpetion firstException = null;
+        InvalidAnnotationExcpetion secondeException = null;
+        Method firstMethod;
+        Method secondMethod;
+
+        try{
+            firstMethod = this.getCallbackMethod(clazz,methodName,argumentType);
+            result.callbackMethod = firstMethod;
+            result.callbackMethodArgumentIsListType = false;
+            return result;
+        }catch(InvalidAnnotationExcpetion e){
+            firstException = e;
+        }
+
+        try{
+            secondMethod = this.getCallbackMethodListType(clazz,methodName,argumentType);
+            result.callbackMethod = secondMethod;
+            result.callbackMethodArgumentIsListType = true;
+            return result;
+        }catch(InvalidAnnotationExcpetion e){
+            secondeException = e;
+        }
+
+        String message = "Could not found callback method\n"+firstException.getMessage()+"\n"+secondeException.getMessage();
+        throw new InvalidAnnotationExcpetion(message);
+    }
+
+    private CallbackInfo getCallbackMethodForSequenceKey(Class clazz,String methodName,Type argumentType){
+        CallbackInfo result = new CallbackInfo();
+        result.callbackMethod =  this.getCallbackMethod(clazz,methodName,argumentType);
+        result.callbackMethodArgumentIsListType = false;
+        return result;
+    }
     private Method getCallbackMethodListType(Class clazz,String methodName,Type argumentType){
         try{
             Method method = clazz.getMethod(methodName,List.class);
@@ -110,7 +154,7 @@ public class TaskChecker {
             }
             return method;
         }catch(NoSuchMethodException e){
-            return null;
+            throw new InvalidAnnotationExcpetion("No Such Method "+clazz+" -> "+methodName+"(List<"+argumentType.getTypeName()+">)");
         }
     }
 
@@ -119,7 +163,7 @@ public class TaskChecker {
             Method method = clazz.getMethod(methodName);
             return method;
         }catch(NoSuchMethodException e){
-            return null;
+            throw new InvalidAnnotationExcpetion("Could not found "+clazz+" -> "+methodName+"()");
         }
     }
 
@@ -138,7 +182,7 @@ public class TaskChecker {
             }
             return method;
         }catch(NoSuchMethodException e){
-            return null;
+            throw new InvalidAnnotationExcpetion("No Such Method "+clazz+" -> "+methodName+"("+argumentType.getTypeName()+")");
         }
     }
 
@@ -157,29 +201,15 @@ public class TaskChecker {
 
             //检查批量调用的返回值参数类型，与结果回调参数类型是否匹配
             boolean callbackMethodArgumentIsEmpty = false;
-            boolean callbackMethodArgumentIsListType = false;
-            Method callbackMethod = null;
+            CallbackInfo callbackInfo;
             Type invokeReturnType = getInvokeMethodReturnType(invokeTarget,invokeMethod);
             if( invokeReturnType != null ){
                 //invokeMethod的返回值为非Void类型
                 callbackMethodArgumentIsEmpty = false;
-                callbackMethod = this.getCallbackMethod(clazz,annotation.callbackMethod(),invokeReturnType);
-                if( callbackMethod != null ){
-                    //callback方法非List类型的
-                    callbackMethodArgumentIsListType = false;
+                if( resultMatch == ResultMatch.KEY ){
+                    callbackInfo = getCallbackMethodForMatchKey(clazz,annotation.callbackMethod(),invokeReturnType);
                 }else{
-                    if( resultMatch == ResultMatch.KEY ){
-                        //KEY匹配类型，允许使用List参数
-                        callbackMethod = this.getCallbackMethodListType(clazz, annotation.callbackMethod(), invokeReturnType);
-                        if( callbackMethod != null ){
-                            callbackMethodArgumentIsListType = true;
-                        }else{
-                            throw new InvalidAnnotationExcpetion("Could not found callback method "+clazz.getName()+" : "+annotation.callbackMethod()+" or argument do not match");
-                        }
-                    }else{
-                        //顺序匹配类型，不允许使用List参数
-                        throw new InvalidAnnotationExcpetion("Could not found callback method "+clazz.getName()+" : "+annotation.callbackMethod()+" or argument do not match");
-                    }
+                    callbackInfo = getCallbackMethodForSequenceKey(clazz,annotation.callbackMethod(),invokeReturnType);
                 }
             }else{
                 //invokeMethod的返回值为Void类型
@@ -187,11 +217,9 @@ public class TaskChecker {
                 if( resultMatch == ResultMatch.KEY ){
                     throw new InvalidAnnotationExcpetion("call back method return type is Void.class，so do not support ResultMatch.KEY");
                 }
-                callbackMethod = this.getCallbackVoidMethod(clazz,annotation.callbackMethod());
-                callbackMethodArgumentIsListType = false;
-                if( callbackMethod == null ){
-                    throw new InvalidAnnotationExcpetion("Could not found callback method "+clazz.getName()+" : "+annotation.callbackMethod()+" or argument is not empty");
-                }
+                callbackInfo = new CallbackInfo();
+                callbackInfo.callbackMethod = this.getCallbackVoidMethod(clazz,annotation.callbackMethod());
+                callbackInfo.callbackMethodArgumentIsListType = false;
             }
 
 
@@ -210,8 +238,8 @@ public class TaskChecker {
             result.setBatchCall(annotation);
             result.setClazz(clazz);
             result.setGetKeyMethod(getKeyMethod);
-            result.setCallbackMethod(callbackMethod);
-            result.setCallbackMethodArgumentIsListType(callbackMethodArgumentIsListType);
+            result.setCallbackMethod(callbackInfo.getCallbackMethod());
+            result.setCallbackMethodArgumentIsListType(callbackInfo.isCallbackMethodArgumentIsListType());
             result.setCallbackMethodArgumentIsEmpty(callbackMethodArgumentIsEmpty);
             result.setInvokeTarget(invokeTarget);
             result.setInvokeMethod(invokeMethod);

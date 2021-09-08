@@ -1,8 +1,9 @@
 package com.fishedee.batch_call.sample;
 
 import com.fishedee.batch_call.BatchCallTask;
-import com.fishedee.batch_call.JsonAssertUtil;
 import com.fishedee.batch_call.autoconfig.BatchCallAutoConfiguration;
+import com.fishedee.batch_call.sample.basic.CountryDTO;
+import com.fishedee.batch_call.sample.basic.UserDao;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
