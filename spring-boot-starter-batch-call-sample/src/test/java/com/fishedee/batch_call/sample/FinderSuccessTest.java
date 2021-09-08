@@ -4,8 +4,7 @@ import com.fishedee.batch_call.Task;
 import com.fishedee.batch_call.TaskFinder;
 import com.fishedee.batch_call.autoconfig.BatchCallAutoConfiguration;
 import com.fishedee.batch_call.sample.basic.RecipeDTO;
-import com.fishedee.batch_call.sample.generic.CatDTO;
-import com.fishedee.batch_call.sample.generic.CatDao;
+import com.fishedee.batch_call.sample.generic.*;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -147,11 +146,47 @@ public class FinderSuccessTest {
         for( int i = 0 ;i !=4;i++){
             assertEquals(catList.get(i).getId(),taskList.get(i).getKey());
         }
+    }
 
+
+    //FIXME 不支持callbcakMethod的泛型参数是纯碎的泛型参数T
+    //只支持callBackMethod的泛型参数是容器包装类型
+    //因为泛型参数是纯粹的泛型参数时，方法的参数难以填写，getMethod(XXXX)
+    @Test
+    public void callbackMethodGenericNormalArgument(){
+        List<SheepDTO> sheepList = new ArrayList<>();
+        sheepList.add(new SheepDTO(1001));
+        sheepList.add(new SheepDTO(1002));
+        sheepList.add(new SheepDTO(1003));
+        sheepList.add(new SheepDTO(1004));
+
+        List<Task> taskList = finder.find("getSheep",sheepList);
+
+        assertEquals(taskList.size(),4);
+        for( int i = 0 ;i !=4;i++){
+            assertEquals(sheepList.get(i),taskList.get(i).getInstance());
+        }
+        for( int i = 0 ;i !=4;i++){
+            assertEquals(sheepList.get(i).getId(),taskList.get(i).getKey());
+        }
     }
 
     @Test
-    public void callbackMethodGeneric(){
+    public void callbackMethodGenericListArgument(){
+        List<DogDTO> dogList = new ArrayList<>();
+        dogList.add(new DogDTO(1001));
+        dogList.add(new DogDTO(1002));
+        dogList.add(new DogDTO(1003));
+        dogList.add(new DogDTO(1004));
 
+        List<Task> taskList = finder.find("getDog",dogList);
+
+        assertEquals(taskList.size(),4);
+        for( int i = 0 ;i !=4;i++){
+            assertEquals(dogList.get(i),taskList.get(i).getInstance());
+        }
+        for( int i = 0 ;i !=4;i++){
+            assertEquals(dogList.get(i).getId(),taskList.get(i).getKey());
+        }
     }
 }
