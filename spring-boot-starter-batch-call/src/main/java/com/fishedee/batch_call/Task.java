@@ -25,6 +25,8 @@ public class Task {
 
         private Method invokeMethod;
 
+        private boolean callbackMethodArgumentIsEmpty;
+
         private Method resultKeyMethod;
     }
 

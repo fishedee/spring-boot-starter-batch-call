@@ -139,32 +139,39 @@ public class TaskFinder {
         }
     }
 
-    private void calcuateClassMethodInfo(Class clazz,ClassInfo result){
-        Method[] methods = clazz.getMethods();
-        for( Method method :methods ){
-            BatchCall batchCall = AnnotationUtils.findAnnotation(method,BatchCall.class);
-            MultipleBatchCall multipleBatchCall = AnnotationUtils.findAnnotation(method,MultipleBatchCall.class);
-            if( batchCall != null || multipleBatchCall != null ){
-                //注意这里一个方法可能同时匹配了BatchCall与MultipleBatchCall
-                if( batchCall != null ){
-                    //找到了一个BatchCall
-                    Method method2 = isValidKeyMethod(method);
-                    if( method2 == null ){
-                        throw new InvalidAnnotationExcpetion("@BachCall "+ clazz.getName() +" -> "+method.getName()+" is invalid" );
+    private void calcuateClassMethodInfo(Class rootClazz,ClassInfo result){
+        Class clazz = rootClazz;
+        while( clazz != Object.class) {
+            Method[] methods = clazz.getDeclaredMethods();
+            for (Method method : methods) {
+                BatchCall batchCall = AnnotationUtils.findAnnotation(method, BatchCall.class);
+                MultipleBatchCall multipleBatchCall = AnnotationUtils.findAnnotation(method, MultipleBatchCall.class);
+                if (batchCall != null || multipleBatchCall != null) {
+                    if( Modifier.isPublic(method.getModifiers()) == false ){
+                        throw new InvalidAnnotationExcpetion("@BachCall " + clazz.getName() + " -> " + method.getName() + " is not public");
                     }
-                    Task.Config config = calcuateConfig(batchCall,clazz,method2);
-                    result.config.add(config);
-                }
-                if( multipleBatchCall != null){
-                    Method method2 = isValidKeyMethod(method);
-                    if( method2 == null ){
-                        throw new InvalidAnnotationExcpetion("@MultipleBatchCall "+ clazz.getName() +" -> "+method.getName()+" is invalid" );
+                    //注意这里一个方法可能同时匹配了BatchCall与MultipleBatchCall
+                    if (batchCall != null) {
+                        //找到了一个BatchCall
+                        Method method2 = isValidKeyMethod(method);
+                        if (method2 == null) {
+                            throw new InvalidAnnotationExcpetion("@BachCall " + rootClazz.getName() + " -> " + method.getName() + " is invalid");
+                        }
+                        Task.Config config = calcuateConfig(batchCall, rootClazz, method2);
+                        result.config.add(config);
                     }
-                    //找到了一个MultiplyBatchCall
-                    List<Task.Config> config = calcuateMultiplyConfig(multipleBatchCall,clazz,method2);
-                    result.config.addAll(config);
+                    if (multipleBatchCall != null) {
+                        Method method2 = isValidKeyMethod(method);
+                        if (method2 == null) {
+                            throw new InvalidAnnotationExcpetion("@MultipleBatchCall " + rootClazz.getName() + " -> " + method.getName() + " is invalid");
+                        }
+                        //找到了一个MultiplyBatchCall
+                        List<Task.Config> config = calcuateMultiplyConfig(multipleBatchCall, rootClazz, method2);
+                        result.config.addAll(config);
+                    }
                 }
             }
+            clazz = clazz.getSuperclass();
         }
     }
 
@@ -178,7 +185,8 @@ public class TaskFinder {
         return result;
     }
 
-    private ClassInfo getClassInfo(Class clazz){
+    //这里是public是为了为linter做准备
+    public ClassInfo getClassInfo(Class clazz){
         ClassInfo classInfo;
         classInfo = this.configMap.get(clazz);
         if( classInfo != null ){

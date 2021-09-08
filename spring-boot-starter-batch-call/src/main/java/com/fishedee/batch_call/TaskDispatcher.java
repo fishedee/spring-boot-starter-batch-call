@@ -61,12 +61,19 @@ public class TaskDispatcher {
 
         //回调数据
         Task.Config config = taskList.get(0).getConfig();
+        boolean callbackMethodArgumentIsEmpty = config.isCallbackMethodArgumentIsEmpty();
+
         Method callbackMethod = config.getCallbackMethod();
         for( int i = 0 ;i != taskList.size();i++){
             Task task = taskList.get(i);
-            Object result = resultList.get(i);
             try{
-                Object nextStep = callbackMethod.invoke(task.getInstance(),result);
+                Object nextStep = null;
+                if( callbackMethodArgumentIsEmpty == true ){
+                    nextStep = callbackMethod.invoke(task.getInstance());
+                }else{
+                    Object result = resultList.get(i);
+                    nextStep = callbackMethod.invoke(task.getInstance(),result);
+                }
                 if( nextStep != null ){
                     nextStepList.add(nextStep);
                 }

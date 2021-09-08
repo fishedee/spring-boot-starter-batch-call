@@ -22,6 +22,7 @@ public class TaskExecutor implements BeanFactoryAware {
 
     public List<Object> invokeSequenceMatch(List<Task> tasks){
         Task.Config config = tasks.get(0).getConfig();
+        boolean callbackMethodArgumentIsEmpty = config.isCallbackMethodArgumentIsEmpty();
 
         //聚合数据
         List<Object> invokeArguments = new ArrayList<>();
@@ -33,6 +34,10 @@ public class TaskExecutor implements BeanFactoryAware {
         try {
             Object invokeBean = this.beanFactory.getBean(config.getInvokeTarget());
             Object result = config.getInvokeMethod().invoke(invokeBean,invokeArguments);
+            if( callbackMethodArgumentIsEmpty == true ){
+                //触发返回值为空
+                return null;
+            }
             //获取结果
             List<Object> objectList = (List<Object>)result;
             if( objectList.size() != tasks.size() ){

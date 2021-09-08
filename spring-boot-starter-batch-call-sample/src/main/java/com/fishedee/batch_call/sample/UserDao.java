@@ -30,6 +30,16 @@ public class UserDao {
     }
 
     //从id转换为name
-    public void insertBatch(List<User> userIds){
+    public void insertBatch(List<User> users){
+        for(User user :users){
+            this.jdbcTemplate.update("insert into user(id,name,level) values(?,?,?)",user.getId(),user.getName(),user.getLevel());
+        }
+    }
+
+    public List<User> getAll(){
+        return this.jdbcTemplate.query("select * from user",
+                new Object[]{},
+                new int[]{},
+                new BeanPropertyRowMapper<>(User.class));
     }
 }

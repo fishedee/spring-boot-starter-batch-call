@@ -11,23 +11,32 @@ import java.util.List;
 @Data
 public class CountryDTO {
     @Data
-    public static class Step{
-        @BatchCall(
-                task="addUser",
-                invokeTarget = UserDao.class,
-                invokeMethod = "insertBatch",
-                callbackMethod = "addFinish"
-        )
+    public static class People{
+
         private Integer userId;
 
         private String name;
 
         private int level;
 
-        private void addFinish(){
+        @BatchCall(
+                task="addUser",
+                invokeTarget = UserDao.class,
+                invokeMethod = "insertBatch",
+                callbackMethod = "addFinish"
+        )
+        public User getUser(){
+            User single = new User();
+            single.setId(this.userId);
+            single.setName(this.name);
+            single.setLevel(this.level);
+            return single;
+        }
+
+        public void addFinish(){
 
         }
     }
 
-    private List<User> userList = new ArrayList<>();
+    private List<People> peopleList = new ArrayList<>();
 }

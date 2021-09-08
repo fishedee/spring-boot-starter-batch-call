@@ -2,6 +2,7 @@ package com.fishedee.batch_call;
 
 import com.fishedee.reflection_boost.GenericActualArgumentExtractor;
 import com.fishedee.reflection_boost.GenericFormalArgumentFiller;
+import lombok.extern.slf4j.Slf4j;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -9,6 +10,7 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.List;
 
+@Slf4j
 public class TaskChecker {
 
     private Type getInvokeMethodArgumentType(Class clazz,Method method){
@@ -32,6 +34,9 @@ public class TaskChecker {
         GenericFormalArgumentFiller filler = new GenericFormalArgumentFiller(extractor);
         Type returnType = method.getGenericReturnType();
         Type realReturnType = filler.fillType(returnType);
+        if( realReturnType.getTypeName().equals("void") ){
+            return null;
+        }
         if( realReturnType instanceof ParameterizedType == false ){
             throw new InvalidAnnotationExcpetion(method.getName()+" return type must be generic Type");
         }
@@ -109,6 +114,16 @@ public class TaskChecker {
         }
     }
 
+    private Method getCallbackVoidMethod(Class clazz,String methodName){
+        try{
+            Method method = clazz.getMethod(methodName);
+            return method;
+        }catch(NoSuchMethodException e){
+            return null;
+        }
+    }
+
+
     private Method getCallbackMethod(Class clazz,String methodName,Type argumentType){
         try{
             Class argumentClass = this.getClassOfType(argumentType);
@@ -141,27 +156,44 @@ public class TaskChecker {
             }
 
             //检查批量调用的返回值参数类型，与结果回调参数类型是否匹配
-            Type invokeReturnType = getInvokeMethodReturnType(invokeTarget,invokeMethod);
+            boolean callbackMethodArgumentIsEmpty = false;
             boolean callbackMethodArgumentIsListType = false;
             Method callbackMethod = null;
-            callbackMethod = this.getCallbackMethod(clazz,annotation.callbackMethod(),invokeReturnType);
-            if( callbackMethod != null ){
-                //callback方法非List类型的
-                callbackMethodArgumentIsListType = false;
-            }else{
-                if( resultMatch == ResultMatch.KEY ){
-                    //KEY匹配类型，允许使用List参数
-                    callbackMethod = this.getCallbackMethodListType(clazz, annotation.callbackMethod(), invokeReturnType);
-                    if( callbackMethod != null ){
-                        callbackMethodArgumentIsListType = true;
+            Type invokeReturnType = getInvokeMethodReturnType(invokeTarget,invokeMethod);
+            if( invokeReturnType != null ){
+                //invokeMethod的返回值为非Void类型
+                callbackMethodArgumentIsEmpty = false;
+                callbackMethod = this.getCallbackMethod(clazz,annotation.callbackMethod(),invokeReturnType);
+                if( callbackMethod != null ){
+                    //callback方法非List类型的
+                    callbackMethodArgumentIsListType = false;
+                }else{
+                    if( resultMatch == ResultMatch.KEY ){
+                        //KEY匹配类型，允许使用List参数
+                        callbackMethod = this.getCallbackMethodListType(clazz, annotation.callbackMethod(), invokeReturnType);
+                        if( callbackMethod != null ){
+                            callbackMethodArgumentIsListType = true;
+                        }else{
+                            throw new InvalidAnnotationExcpetion("Could not found callback method "+clazz.getName()+" : "+annotation.callbackMethod()+" or argument do not match");
+                        }
                     }else{
+                        //顺序匹配类型，不允许使用List参数
                         throw new InvalidAnnotationExcpetion("Could not found callback method "+clazz.getName()+" : "+annotation.callbackMethod()+" or argument do not match");
                     }
-                }else{
-                    //顺序匹配类型，不允许使用List参数
-                    throw new InvalidAnnotationExcpetion("Could not found callback method "+clazz.getName()+" : "+annotation.callbackMethod()+" or argument do not match");
+                }
+            }else{
+                //invokeMethod的返回值为Void类型
+                callbackMethodArgumentIsEmpty = true;
+                if( resultMatch == ResultMatch.KEY ){
+                    throw new InvalidAnnotationExcpetion("call back method return type is Void.class，so do not support ResultMatch.KEY");
+                }
+                callbackMethod = this.getCallbackVoidMethod(clazz,annotation.callbackMethod());
+                callbackMethodArgumentIsListType = false;
+                if( callbackMethod == null ){
+                    throw new InvalidAnnotationExcpetion("Could not found callback method "+clazz.getName()+" : "+annotation.callbackMethod()+" or argument is not empty");
                 }
             }
+
 
             //检查key类型是否重写了equals与hashCode，并获取resultKeyMethod
             Method resultKeyMethod = null;
@@ -180,6 +212,7 @@ public class TaskChecker {
             result.setGetKeyMethod(getKeyMethod);
             result.setCallbackMethod(callbackMethod);
             result.setCallbackMethodArgumentIsListType(callbackMethodArgumentIsListType);
+            result.setCallbackMethodArgumentIsEmpty(callbackMethodArgumentIsEmpty);
             result.setInvokeTarget(invokeTarget);
             result.setInvokeMethod(invokeMethod);
             result.setResultKeyMethod(resultKeyMethod);
