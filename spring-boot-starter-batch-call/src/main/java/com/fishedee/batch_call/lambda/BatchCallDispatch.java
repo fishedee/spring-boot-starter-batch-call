@@ -1,5 +1,6 @@
 package com.fishedee.batch_call.lambda;
 
+import java.util.List;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
@@ -18,8 +19,19 @@ public class BatchCallDispatch<KeyObjectType,KeyType> {
 
     public BatchCallRun dispatch(BiFunctionVoid<KeyObjectType, KeyType> dispatchFunc){
         this.config.setHasDispatchFunc(true);
-        this.config.setDispatchFunc((KeyObjectType a,KeyType b)->{
-            dispatchFunc.apply(a,b);
+        this.config.setDipatchFuncArguListType(false);
+        this.config.setDispatchFunc((Object a,Object b)->{
+            dispatchFunc.apply((KeyObjectType)a,(KeyType)b);
+            return null;
+        });
+        return new BatchCallRun(this.config);
+    }
+
+    public BatchCallRun dispatchList(BiFunctionVoid<KeyObjectType, List<KeyType>> dispatchFunc){
+        this.config.setHasDispatchFunc(true);
+        this.config.setDipatchFuncArguListType(true);
+        this.config.setDispatchFunc((Object a,Object b)->{
+            dispatchFunc.apply((KeyObjectType)a,(List<KeyType>)b);
             return null;
         });
         return new BatchCallRun(this.config);

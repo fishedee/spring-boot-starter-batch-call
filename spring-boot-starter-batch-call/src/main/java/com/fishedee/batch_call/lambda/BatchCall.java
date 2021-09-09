@@ -12,8 +12,8 @@ public class BatchCall<KeyObjectType,KeyType> {
     }
 
     public <CallTargetType> BatchCallVoidDispatch<KeyObjectType> call(CallTargetType callTarget, BiFunctionVoid<CallTargetType, List<KeyType>> callFunc){
-        this.config.setCallFunc((CallTargetType a,List<KeyType> b)->{
-            callFunc.apply(a,b);
+        this.config.setCallFunc(( Object a,Object b)->{
+            callFunc.apply((CallTargetType)a,(List<KeyType>)b);
             return null;
         });
         this.config.setCallTarget(callTarget);
