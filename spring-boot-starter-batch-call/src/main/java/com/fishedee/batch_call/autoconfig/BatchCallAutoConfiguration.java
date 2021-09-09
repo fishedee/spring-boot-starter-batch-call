@@ -22,35 +22,35 @@ public class BatchCallAutoConfiguration {
         this.properties = properties;
     }
 
-    @Bean
+    @Bean("batchCallTask")
     @ConditionalOnMissingBean(BatchCallTask.class)
     @ConditionalOnProperty(value = "spring.batch-call.enable", havingValue = "true")
     public BatchCallTask batchCallTask(){
         return new BatchCallTask();
     }
 
-    @Bean
+    @Bean("batchCallTaskFinder")
     @ConditionalOnMissingBean(TaskFinder.class)
     @ConditionalOnProperty(value = "spring.batch-call.enable", havingValue = "true")
     public TaskFinder taskFinder(){
         return new TaskFinder();
     }
 
-    @Bean
+    @Bean("batchCallTaskDispatcher")
     @ConditionalOnMissingBean(TaskDispatcher.class)
     @ConditionalOnProperty(value = "spring.batch-call.enable", havingValue = "true")
     public TaskDispatcher taskDispatcher(){
         return new TaskDispatcher();
     }
 
-    @Bean
+    @Bean("batchCallTaskExecutor")
     @ConditionalOnMissingBean(TaskExecutor.class)
     @ConditionalOnProperty(value = "spring.batch-call.enable", havingValue = "true")
     public TaskExecutor taskExecutor(){
         return new TaskExecutor();
     }
 
-    @Bean
+    @Bean("batchCallTaskChecker")
     @ConditionalOnMissingBean(TaskChecker.class)
     @ConditionalOnProperty(value = "spring.batch-call.enable", havingValue = "true")
     public TaskChecker taskChecker(){

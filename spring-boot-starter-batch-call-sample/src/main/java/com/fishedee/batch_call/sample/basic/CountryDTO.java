@@ -1,7 +1,6 @@
 package com.fishedee.batch_call.sample.basic;
 
 import com.fishedee.batch_call.BatchCall;
-import com.fishedee.batch_call.sample.User;
 import lombok.Data;
 
 import java.util.ArrayList;

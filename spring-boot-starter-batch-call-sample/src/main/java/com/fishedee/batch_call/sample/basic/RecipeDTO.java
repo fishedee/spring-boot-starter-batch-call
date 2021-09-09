@@ -2,7 +2,6 @@ package com.fishedee.batch_call.sample.basic;
 
 import com.fishedee.batch_call.BatchCall;
 import com.fishedee.batch_call.ResultMatch;
-import com.fishedee.batch_call.sample.User;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 

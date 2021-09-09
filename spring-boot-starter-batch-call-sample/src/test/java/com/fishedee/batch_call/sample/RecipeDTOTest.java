@@ -1,9 +1,12 @@
 package com.fishedee.batch_call.sample;
 
-import com.fishedee.batch_call.BatchCallTask;
+import com.fishedee.batch_call.lambda.BatchCallTask;
 import com.fishedee.batch_call.JsonAssertUtil;
 import com.fishedee.batch_call.autoconfig.BatchCallAutoConfiguration;
+import com.fishedee.batch_call.lambda.ResultMatchByKey;
+import com.fishedee.batch_call.sample.basic.CountryDTO;
 import com.fishedee.batch_call.sample.basic.RecipeDTO;
+import com.fishedee.batch_call.sample.basic.User;
 import com.fishedee.batch_call.sample.basic.UserDao;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,17 +15,21 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.FilterType;
 import org.springframework.context.annotation.Import;
 
-@DataJpaTest(includeFilters = @ComponentScan.Filter(
-        type= FilterType.ASSIGNABLE_TYPE,
-        classes = {UserDao.class}
-))
+import java.util.function.Function;
+
+@DataJpaTest
 @Import(BatchCallAutoConfiguration.class)
 public class RecipeDTOTest{
     @Autowired
-    private BatchCallTask batchCallTask;
+    private com.fishedee.batch_call.BatchCallTask batchCallTask;
+
+    private RecipeDTO recipeDTO;
+
+    @Autowired
+    private UserDao userDao;
 
     @Test
-    public void basicTest(){
+    public void setUp() {
         //初始化数据
         RecipeDTO.Step step = new RecipeDTO.Step();
         step.setUserId(10001);
@@ -34,14 +41,26 @@ public class RecipeDTOTest{
         step4.setUserId(10001);
 
 
-        RecipeDTO recipeDTO = new RecipeDTO();
+        recipeDTO = new RecipeDTO();
         recipeDTO.getStepList().add(step);
         recipeDTO.getStepList().add(step2);
         recipeDTO.getStepList().add(step3);
         recipeDTO.getStepList().add(step4);
+    }
 
+    @Test
+    public void basicTest(){
         batchCallTask.run("getUser",recipeDTO);
 
         JsonAssertUtil.checkEqualNotStrict("{}",recipeDTO);
+    }
+
+    @Test
+    public void basicTest2(){
+        new BatchCallTask()
+            .collectKey(RecipeDTO.Step.class,RecipeDTO.Step::getUserId)
+            .callForResult(userDao,UserDao::getBatch,new ResultMatchByKey<>(User::getId))
+            .dispatch(RecipeDTO.Step::setUser)
+            .run(recipeDTO);
     }
 }
