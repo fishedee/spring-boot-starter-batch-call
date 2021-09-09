@@ -1,10 +1,8 @@
 package com.fishedee.batch_call.sample;
 
-import com.fishedee.batch_call.lambda.BatchCallTask;
-import com.fishedee.batch_call.JsonAssertUtil;
+import com.fishedee.batch_call.BatchCallTask;
 import com.fishedee.batch_call.autoconfig.BatchCallAutoConfiguration;
-import com.fishedee.batch_call.lambda.ResultMatchByKey;
-import com.fishedee.batch_call.sample.basic.CountryDTO;
+import com.fishedee.batch_call.ResultMatchByKey;
 import com.fishedee.batch_call.sample.basic.RecipeDTO;
 import com.fishedee.batch_call.sample.basic.User;
 import com.fishedee.batch_call.sample.basic.UserDao;
@@ -15,13 +13,12 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.FilterType;
 import org.springframework.context.annotation.Import;
 
-import java.util.function.Function;
-
-@DataJpaTest
+@DataJpaTest(includeFilters = @ComponentScan.Filter(
+        type= FilterType.ASSIGNABLE_TYPE,
+        classes = {UserDao.class}
+))
 @Import(BatchCallAutoConfiguration.class)
 public class RecipeDTOTest{
-    @Autowired
-    private com.fishedee.batch_call.BatchCallTask batchCallTask;
 
     private RecipeDTO recipeDTO;
 
@@ -50,13 +47,6 @@ public class RecipeDTOTest{
 
     @Test
     public void basicTest(){
-        batchCallTask.run("getUser",recipeDTO);
-
-        JsonAssertUtil.checkEqualNotStrict("{}",recipeDTO);
-    }
-
-    @Test
-    public void basicTest2(){
         new BatchCallTask()
             .collectKey(RecipeDTO.Step.class,RecipeDTO.Step::getUserId)
             .callForResult(userDao,UserDao::getBatch,new ResultMatchByKey<>(User::getId))

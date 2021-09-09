@@ -1,7 +1,5 @@
 package com.fishedee.batch_call.sample.basic;
 
-import com.fishedee.batch_call.BatchCall;
-import com.fishedee.batch_call.ResultMatch;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -16,14 +14,6 @@ public class RecipeDTO {
 
         private String decription;
 
-        @BatchCall(
-                task="getUser",
-                invokeTarget = UserDao.class,
-                invokeMethod = "getBatch",
-                callbackMethod = "setUser",
-                resultMatch = ResultMatch.KEY,
-                resultMatchKey = "id"
-        )
         private Integer userId;
 
         private String name;

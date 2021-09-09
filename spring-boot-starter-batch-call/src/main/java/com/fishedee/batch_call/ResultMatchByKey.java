@@ -1,5 +1,5 @@
 
-package com.fishedee.batch_call.lambda;
+package com.fishedee.batch_call;
 
 import java.util.function.Function;
 

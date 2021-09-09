@@ -1,93 +1,64 @@
 package com.fishedee.batch_call;
 
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
+import lombok.extern.slf4j.Slf4j;
+
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.BiFunction;
 
+@Slf4j
 public class TaskDispatcher {
-    public List<Object> dispatchKeyMatch(List<Task> taskList,List<List<Object>> resultList){
+    public List<Object> dispatchKeyMatch(Config config,List<Task> taskList, List<List<Object>> resultList){
         List<Object> nextStepList = new ArrayList<>();
 
-        Task.Config config = taskList.get(0).getConfig();
-        boolean allowResultNotFound = config.getBatchCall().allowResultNotFound();
-        String debugName = config.getBatchCall().name();
+        boolean allowResultNotFound = config.isHasCallResultMatchByKeyDefault();
+        String debugName = config.getCallTarget().getClass().getName();
 
         //回调数据
-        Method callbackMethod = config.getCallbackMethod();
+        BiFunction dispatchFunc = config.getDispatchFunc();
+        Object defaultResult = config.getCallResultMatchByKeyDefault();
         for( int i = 0 ;i != taskList.size();i++){
             Task task = taskList.get(i);
             List<Object> result = resultList.get(i);
-            try{
-                Object nextStep = null;
-                if( config.isCallbackMethodArgumentIsListType() ){
-                    //参数是List类型
-                    nextStep = callbackMethod.invoke(task.getInstance(),result);
-                }else{
-                    //参数不是List类型
-                    if( result.size() == 1 ) {
-                        nextStep = callbackMethod.invoke(task.getInstance(),result.get(0));
-                    }else if( result.size() == 0  ){
-                        if( allowResultNotFound ){
-                            nextStep = callbackMethod.invoke(task.getInstance(),null);
-                        }else{
-                            throw new CallResultNotFoundException(debugName,task.getKey());
-                        }
-                    }else if( result.size() != 1 ){
-                        throw new CallResultMultiplyConfuseException(debugName,task.getKey());
+            Object nextStep = null;
+            if( config.isDipatchFuncArguListType() ){
+                //参数是List类型
+                nextStep = dispatchFunc.apply(task.getInstance(),result);
+            }else{
+                //参数不是List类型
+                if( result.size() == 1 ) {
+                    nextStep = dispatchFunc.apply(task.getInstance(),result.get(0));
+                }else if( result.size() == 0  ){
+                    if( allowResultNotFound ){
+                        nextStep = dispatchFunc.apply(task.getInstance(),defaultResult);
+                    }else{
+                        throw new CallResultNotFoundException(debugName,task.getKey());
                     }
+                }else if( result.size() != 1 ){
+                    throw new CallResultMultiplyConfuseException(debugName,task.getKey());
                 }
-                if( nextStep != null ){
-                    nextStepList.add(nextStep);
-                }
-            }catch( InvocationTargetException e ){
-                Throwable cause = e.getCause();
-                if( cause instanceof  RuntimeException){
-                    throw (RuntimeException)cause;
-                }else{
-                    throw new InvokeReflectMethodException(cause);
-                }
-            }catch(IllegalAccessException e){
-                throw new InvokeReflectMethodException(e);
-            }catch(IllegalArgumentException e){
-                throw new InvokeReflectMethodException(e);
+            }
+            if( nextStep != null ){
+                nextStepList.add(nextStep);
             }
         }
         return nextStepList;
     }
 
-    public List<Object> dispatchSequenceMatch(List<Task> taskList,List<Object> resultList){
+    public List<Object> dispatchSequenceMatch(Config config,List<Task> taskList, List<Object> resultList){
         List<Object> nextStepList = new ArrayList<>();
 
         //回调数据
-        Task.Config config = taskList.get(0).getConfig();
-        boolean callbackMethodArgumentIsEmpty = config.isCallbackMethodArgumentIsEmpty();
-
-        Method callbackMethod = config.getCallbackMethod();
+        BiFunction dispatchFunc = config.getDispatchFunc();
         for( int i = 0 ;i != taskList.size();i++){
             Task task = taskList.get(i);
-            try{
-                Object nextStep = null;
-                if( callbackMethodArgumentIsEmpty == true ){
-                    nextStep = callbackMethod.invoke(task.getInstance());
-                }else{
-                    Object result = resultList.get(i);
-                    nextStep = callbackMethod.invoke(task.getInstance(),result);
-                }
-                if( nextStep != null ){
-                    nextStepList.add(nextStep);
-                }
-            }catch( InvocationTargetException e ){
-                Throwable cause = e.getCause();
-                if( cause instanceof  RuntimeException){
-                    throw (RuntimeException)cause;
-                }else{
-                    throw new InvokeReflectMethodException(cause);
-                }
-            }catch(IllegalAccessException e){
-                throw new InvokeReflectMethodException(e);
-            }catch(IllegalArgumentException e){
-                throw new InvokeReflectMethodException(e);
+            Object result = null;
+            if( resultList != null ){
+                result = resultList.get(i);
+            }
+            Object nextStep = dispatchFunc.apply(task.getInstance(),result);
+            if( nextStep != null ){
+                nextStepList.add(nextStep);
             }
         }
         return nextStepList;

@@ -1,29 +1,13 @@
 package com.fishedee.batch_call;
 
-import lombok.Data;
-import org.springframework.beans.BeansException;
-import org.springframework.beans.factory.BeanFactory;
-import org.springframework.beans.factory.BeanFactoryAware;
-
-import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class TaskExecutor implements BeanFactoryAware {
+public class TaskExecutor {
 
-    private BeanFactory beanFactory;
-
-    @Override
-    public void setBeanFactory(BeanFactory factory) throws BeansException{
-        this.beanFactory = factory;
-    }
-
-    public List<Object> invokeSequenceMatch(List<Task> tasks){
-        Task.Config config = tasks.get(0).getConfig();
-        boolean callbackMethodArgumentIsEmpty = config.isCallbackMethodArgumentIsEmpty();
-
+    public List<Object> invokeSequenceMatch(Config config,List<Task> tasks){
         //聚合数据
         List<Object> invokeArguments = new ArrayList<>();
         for( Task task :tasks){
@@ -31,36 +15,21 @@ public class TaskExecutor implements BeanFactoryAware {
         }
 
         //批量调用
-        try {
-            Object invokeBean = this.beanFactory.getBean(config.getInvokeTarget());
-            Object result = config.getInvokeMethod().invoke(invokeBean,invokeArguments);
-            if( callbackMethodArgumentIsEmpty == true ){
-                //触发返回值为空
-                return null;
-            }
-            //获取结果
-            List<Object> objectList = (List<Object>)result;
-            if( objectList.size() != tasks.size() ){
-                throw new InvalidCallResultException("Call Result size "+objectList.size()+" is not equal to task size "+tasks.size());
-            }
-            return objectList;
-        }catch( InvocationTargetException e ){
-            Throwable cause = e.getCause();
-            if( cause instanceof  RuntimeException){
-                throw (RuntimeException)cause;
-            }else{
-                throw new InvokeReflectMethodException(cause);
-            }
-        }catch(IllegalAccessException e){
-            throw new InvokeReflectMethodException(e);
-        }catch(IllegalArgumentException e){
-            throw new InvokeReflectMethodException(e);
+        Object invokeBean = config.getCallTarget();
+        Object result = config.getCallFunc().apply(invokeBean,invokeArguments);
+        if( result == null ){
+            //触发返回值为空
+            return null;
         }
+        //获取结果
+        List<Object> objectList = (List<Object>)result;
+        if( objectList.size() != tasks.size() ){
+            throw new InvalidCallResultException("Call Result size "+objectList.size()+" is not equal to task size "+tasks.size());
+        }
+        return objectList;
     }
 
-    public List<List<Object>> invokeKeyMatch(List<Task> tasks){
-        Task.Config config = tasks.get(0).getConfig();
-
+    public List<List<Object>> invokeKeyMatch(Config config,List<Task> tasks){
         //聚合数据
         List<Object> invokeArguments = new ArrayList<>();
         for( Task task :tasks){
@@ -68,43 +37,30 @@ public class TaskExecutor implements BeanFactoryAware {
         }
 
         //批量调用
-        try{
-            Object invokeBean = this.beanFactory.getBean(config.getInvokeTarget());
-            Object result = config.getInvokeMethod().invoke(invokeBean,invokeArguments);
-            //获取结果
-            List<Object> resultList = (List<Object>)result;
-            //将结果转换为map
-            Map<Object,List<Object>> mapResult = new HashMap<>();
-            for( Object singleResult : resultList){
-                Object singleResultKey = config.getResultKeyMethod().invoke(singleResult);
-                List<Object> valueList = mapResult.get(singleResultKey);
-                if( valueList == null ){
-                    valueList = new ArrayList<>();
-                    mapResult.put(singleResultKey,valueList);
-                }
-                valueList.add(singleResult);
+        Object invokeBean = config.getCallTarget();
+        Object result = config.getCallFunc().apply(invokeBean,invokeArguments);
+        //获取结果
+        List<Object> resultList = (List<Object>)result;
+        //将结果转换为map
+        Map<Object,List<Object>> mapResult = new HashMap<>();
+        for( Object singleResult : resultList){
+            Object singleResultKey = config.getCallResultMatchByKey().apply(singleResult);
+            List<Object> valueList = mapResult.get(singleResultKey);
+            if( valueList == null ){
+                valueList = new ArrayList<>();
+                mapResult.put(singleResultKey,valueList);
             }
-            //将结果写入到List
-            List<List<Object>> finalResultList = new ArrayList<>();
-            for( Task task :tasks ){
-                List<Object> singleResult = mapResult.get(task.getKey());
-                if( singleResult == null ){
-                    singleResult = new ArrayList<>();
-                }
-                finalResultList.add(singleResult);
-            }
-            return finalResultList;
-        }catch( InvocationTargetException e ){
-            Throwable cause = e.getCause();
-            if( cause instanceof  RuntimeException){
-                throw (RuntimeException)cause;
-            }else{
-                throw new InvokeReflectMethodException(cause);
-            }
-        }catch(IllegalAccessException e){
-            throw new InvokeReflectMethodException(e);
-        }catch(IllegalArgumentException e){
-            throw new InvokeReflectMethodException(e);
+            valueList.add(singleResult);
         }
+        //将结果写入到List
+        List<List<Object>> finalResultList = new ArrayList<>();
+        for( Task task :tasks ){
+            List<Object> singleResult = mapResult.get(task.getKey());
+            if( singleResult == null ){
+                singleResult = new ArrayList<>();
+            }
+            finalResultList.add(singleResult);
+        }
+        return finalResultList;
     }
 }

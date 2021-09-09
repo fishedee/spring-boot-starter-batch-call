@@ -1,40 +1,50 @@
 package com.fishedee.batch_call;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import java.util.List;
+import java.util.function.BiFunction;
 
-@Target({ElementType.METHOD,ElementType.FIELD})
-@Retention(RetentionPolicy.RUNTIME)
-public @interface BatchCall {
-    //task name，argument for BatchCallTask.invokeTask()
-    String task();
+public class BatchCall<KeyObjectType,KeyType> {
 
-    //invoke target
-    Class invokeTarget();
+    private Config config;
 
-    //invoke target method name
-    String invokeMethod();
+    public BatchCall(Config config){
+        this.config = config;
+    }
 
-    //callback method name
-    String callbackMethod();
+    public <CallTargetType> BatchCallVoidDispatch<KeyObjectType> call(CallTargetType callTarget, BiFunctionVoid<CallTargetType, List<KeyType>> callFunc){
+        this.config.setCallFunc(( Object a,Object b)->{
+            callFunc.apply((CallTargetType)a,(List<KeyType>)b);
+            return null;
+        });
+        this.config.setCallTarget(callTarget);
+        this.config.setMatcher(ResultMatch.SEQUENCE);
+        return new BatchCallVoidDispatch<KeyObjectType>(this.config);
+    }
 
-    //name for debug
-    String name() default "";
+    public <CallTargetType,CallResultType> BatchCallDispatch<KeyObjectType,CallResultType> callForResult(CallTargetType callTarget, BiFunction<CallTargetType, List<KeyType>,List<CallResultType>> callFunc){
+        this.config.setCallFunc(callFunc);
+        this.config.setCallTarget(callTarget);
+        this.config.setMatcher(ResultMatch.SEQUENCE);
+        return new BatchCallDispatch<KeyObjectType,CallResultType>(this.config);
+    }
 
-    //max size for each batch
-    int batchSize() default 0;
+    public <CallTargetType,CallResultType> BatchCallDispatch<KeyObjectType,CallResultType> callForResult(CallTargetType callTarget, BiFunction<CallTargetType, List<KeyType>,List<CallResultType>> callFunc,ResultMatchByKey<CallResultType,KeyType> matcherByKey){
+        this.config.setCallFunc(callFunc);
+        this.config.setCallTarget(callTarget);
+        this.config.setMatcher(ResultMatch.KEY);
+        this.config.setCallResultMatchByKey(matcherByKey.getMatcher());
+        this.config.setHasCallResultMatchByKeyDefault(false);
+        return new BatchCallDispatch<KeyObjectType,CallResultType>(this.config);
+    }
 
-    //match type
-    ResultMatch resultMatch() default ResultMatch.SEQUENCE;
+    public <CallTargetType,CallResultType> BatchCallDispatch<KeyObjectType,CallResultType> callForResult(CallTargetType callTarget, BiFunction<CallTargetType, List<KeyType>,List<CallResultType>> callFunc,ResultMatchByKey<KeyType,CallResultType> matcherByKey,CallResultType defaultResult){
+        this.config.setCallFunc(callFunc);
+        this.config.setCallTarget(callTarget);
+        this.config.setMatcher(ResultMatch.KEY);
+        this.config.setCallResultMatchByKey(matcherByKey.getMatcher());
+        this.config.setHasCallResultMatchByKeyDefault(true);
+        this.config.setCallResultMatchByKeyDefault(defaultResult);
+        return new BatchCallDispatch<KeyObjectType,CallResultType>(this.config);
+    }
 
-    //allow not found?
-    boolean allowResultNotFound() default false;
-
-    //match key
-    String resultMatchKey() default "";
-
-    //cacheEnabled
-    boolean cacheEnabled() default false;
 }

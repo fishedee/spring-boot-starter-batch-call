@@ -1,13 +1,4 @@
-package com.fishedee.batch_call.lambda;
-
-import com.fishedee.batch_call.BatchCall;
-import com.fishedee.batch_call.ResultMatch;
-import com.fishedee.batch_call.Task;
-import com.fishedee.batch_call.TaskCache;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.function.Function;
+package com.fishedee.batch_call;
 
 public class BatchCallRun{
 

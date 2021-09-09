@@ -1,8 +1,7 @@
-package com.fishedee.batch_call.lambda;
+package com.fishedee.batch_call;
 
 import java.util.List;
 import java.util.function.BiFunction;
-import java.util.function.Function;
 
 public class BatchCallDispatch<KeyObjectType,KeyType> {
     private Config config;

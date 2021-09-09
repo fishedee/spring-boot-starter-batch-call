@@ -1,7 +1,5 @@
 package com.fishedee.batch_call.sample.generic;
 
-import com.fishedee.batch_call.BatchCall;
-
 import java.util.List;
 import java.util.stream.Collectors;
 

@@ -1,4 +1,4 @@
-package com.fishedee.batch_call.lambda;
+package com.fishedee.batch_call;
 
 import com.fishedee.batch_call.autoconfig.BatchCallProperties;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -47,7 +47,7 @@ public class TaskRunner {
 
     private List<Task> singleBatch(Config config,List<Task> taskList,TaskCache cache){
         boolean cacheEnabled = config.isCacheEnabled();
-
+        boolean hasDispatcherFunc = config.isHasDispatchFunc();
         List<Task> nextStepTask = new ArrayList<>();
         if( config.getMatcher() == ResultMatch.KEY){
             //使用key匹配的方式
@@ -62,7 +62,7 @@ public class TaskRunner {
                 taskCacheResult.setCacheResult(new ArrayList<>());
                 taskCacheResult.setHasCacheTask(new ArrayList<>());
             }
-            if( taskCacheResult.getHasCacheTask().size()!= 0 ){
+            if( taskCacheResult.getHasCacheTask().size()!= 0 && hasDispatcherFunc){
                 //对有缓存的部分，直接进行数据分发
                 List<Object> dispatchResult = dispatcher.dispatchKeyMatch(config,taskCacheResult.getHasCacheTask(),taskCacheResult.getCacheResult());
                 if( dispatchResult.size() != 0 ){
@@ -76,20 +76,26 @@ public class TaskRunner {
                     //开启缓存的情况下，将数据放入缓存
                     cache.putAll(taskCacheResult.getNoCacheTask(),result);
                 }
-                //数据分发
-                List<Object> dispatchResult = dispatcher.dispatchKeyMatch(config,taskCacheResult.getNoCacheTask(),result);
-                if( dispatchResult.size() != 0 ){
-                    nextStepTask.addAll(finder.find(config,dispatchResult));
+                if( hasDispatcherFunc ) {
+                    //有数据分发操作
+                    List<Object> dispatchResult = dispatcher.dispatchKeyMatch(config, taskCacheResult.getNoCacheTask(), result);
+                    if (dispatchResult.size() != 0) {
+                        nextStepTask.addAll(finder.find(config, dispatchResult));
+                    }
                 }
             }
         }else{
             //连续匹配的方式，不能开启缓存
             //不开启缓存的话，直接进行批量调用与分发操作
             List<Object> result = executor.invokeSequenceMatch(config,taskList);
-            List<Object> dispatchResult = dispatcher.dispatchSequenceMatch(config,taskList,result);
-            if( dispatchResult.size() != 0 ){
-                nextStepTask.addAll(finder.find(config,dispatchResult));
+            if( hasDispatcherFunc ){
+                //有数据分发操作
+                List<Object> dispatchResult = dispatcher.dispatchSequenceMatch(config,taskList,result);
+                if( dispatchResult.size() != 0 ){
+                    nextStepTask.addAll(finder.find(config,dispatchResult));
+                }
             }
+
         }
         return nextStepTask;
     }

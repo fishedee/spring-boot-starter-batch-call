@@ -1,6 +1,5 @@
 package com.fishedee.batch_call.sample.basic;
 
-import com.fishedee.batch_call.BatchCall;
 import lombok.Data;
 
 import java.util.ArrayList;
@@ -17,12 +16,6 @@ public class CountryDTO {
 
         private int level;
 
-        @BatchCall(
-                task="addUser",
-                invokeTarget = UserDao.class,
-                invokeMethod = "insertBatch",
-                callbackMethod = "addFinish"
-        )
         public User getUser(){
             User single = new User();
             single.setId(this.userId);

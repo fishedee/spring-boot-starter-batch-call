@@ -1,6 +1,6 @@
 package com.fishedee.batch_call.sample;
 
-import com.fishedee.batch_call.lambda.BatchCallTask;
+import com.fishedee.batch_call.BatchCallTask;
 import com.fishedee.batch_call.autoconfig.BatchCallAutoConfiguration;
 import com.fishedee.batch_call.sample.basic.CountryDTO;
 import com.fishedee.batch_call.sample.basic.UserDao;
@@ -20,8 +20,6 @@ import static org.junit.jupiter.api.Assertions.*;
 ))
 @Import(BatchCallAutoConfiguration.class)
 public class CountryTest {
-    @Autowired
-    private com.fishedee.batch_call.BatchCallTask batchCallTask;
 
     @Autowired
     private UserDao userDao;
@@ -54,15 +52,7 @@ public class CountryTest {
     @Test
     public void basicTest(){
         int oldSize = userDao.getAll().size();
-        batchCallTask.run("addUser",countryDTO);
-        int newSize = userDao.getAll().size();
-        assertEquals(3,newSize-oldSize);
-    }
-
-    @Test
-    public void basicTest2(){
-        int oldSize = userDao.getAll().size();
-        new com.fishedee.batch_call.lambda.BatchCallTask()
+        new BatchCallTask()
                 .collectKey(CountryDTO.People.class,CountryDTO.People::getUser)
                 .call(userDao,UserDao::insertBatch)
                 .noDispatch()

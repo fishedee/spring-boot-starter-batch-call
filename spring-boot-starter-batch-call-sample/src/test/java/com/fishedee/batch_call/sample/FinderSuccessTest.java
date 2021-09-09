@@ -1,7 +1,5 @@
 package com.fishedee.batch_call.sample;
 
-import com.fishedee.batch_call.Task;
-import com.fishedee.batch_call.TaskFinder;
 import com.fishedee.batch_call.autoconfig.BatchCallAutoConfiguration;
 import com.fishedee.batch_call.sample.basic.RecipeDTO;
 import com.fishedee.batch_call.sample.generic.*;
@@ -20,8 +18,6 @@ import java.util.*;
 @Slf4j
 public class FinderSuccessTest {
 
-    @Autowired
-    private TaskFinder finder;
 
     private RecipeDTO recipeDTO;
 
@@ -44,7 +40,7 @@ public class FinderSuccessTest {
         recipeDTO.getStepList().add(step3);
         recipeDTO.getStepList().add(step4);
     }
-
+    /*
     @Test
     public void testBasic(){
         RecipeDTO.Step step = new RecipeDTO.Step();
@@ -189,4 +185,5 @@ public class FinderSuccessTest {
             assertEquals(dogList.get(i).getId(),taskList.get(i).getKey());
         }
     }
+    */
 }
