@@ -17,6 +17,12 @@ public class Config {
     //收集的对象回调方法
     private BiFunction dispatchFunc;
 
+    //是否首次越过skipCollect
+    private boolean isFirstSkipCollectAndThenCall;
+
+    //首次调用call的参数，仅在isFirstSkipCollect为true时有效
+    private Object firstCallArgu;
+
     //是否有对象回调方法
     private boolean hasDispatchFunc;
 
@@ -45,5 +51,5 @@ public class Config {
     private int batchSize = 0;
 
     //是否打开缓存
-    private boolean isCacheEnabled = false;
+    private boolean cacheEnabled = false;
 }

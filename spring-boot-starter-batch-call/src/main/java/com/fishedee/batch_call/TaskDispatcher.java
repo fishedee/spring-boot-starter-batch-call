@@ -4,44 +4,42 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.function.BiFunction;
 
 @Slf4j
 public class TaskDispatcher {
-    public List<Object> dispatchKeyMatch(Config config,List<Task> taskList, List<List<Object>> resultList){
+    public List<Object> dispatchKeyMatch(Config config,List<Task> taskList, Map<Object,List<Object>> resultMap){
         List<Object> nextStepList = new ArrayList<>();
 
         boolean allowResultNotFound = config.isHasCallResultMatchByKeyDefault();
         Class targetClass = config.getCallTarget().getClass();
-        String debugName = targetClass.getName();
 
         //回调数据
         BiFunction dispatchFunc = config.getDispatchFunc();
         Object defaultResult = config.getCallResultMatchByKeyDefault();
         for( int i = 0 ;i != taskList.size();i++){
             Task task = taskList.get(i);
-            List<Object> result = resultList.get(i);
+            List<Object> result = resultMap.get(task.getKey());
             Object nextStep = null;
             if( config.isDipatchFuncArguListType() ){
                 //参数是List类型
                 nextStep = dispatchFunc.apply(task.getInstance(),result);
             }else{
                 //参数不是List类型
-                if( result.size() == 1 ) {
-                    nextStep = dispatchFunc.apply(task.getInstance(),result.get(0));
-                }else if( result.size() == 0  ){
+                if( result.size() == 0  ){
                     if( allowResultNotFound ){
                         nextStep = dispatchFunc.apply(task.getInstance(),defaultResult);
                     }else{
                         throw new CallResultNotFoundException(targetClass,task.getKey());
                     }
-                }else if( result.size() != 1 ){
+                }else if( result.size() == 1 ) {
+                    nextStep = dispatchFunc.apply(task.getInstance(),result.get(0));
+                }else {
                     throw new CallResultMultiplyConfuseException(targetClass,task.getKey());
                 }
             }
-            if( nextStep != null ){
-                nextStepList.add(nextStep);
-            }
+            nextStepList.add(nextStep);
         }
         return nextStepList;
     }
@@ -58,9 +56,7 @@ public class TaskDispatcher {
                 result = resultList.get(i);
             }
             Object nextStep = dispatchFunc.apply(task.getInstance(),result);
-            if( nextStep != null ){
-                nextStepList.add(nextStep);
-            }
+            nextStepList.add(nextStep);
         }
         return nextStepList;
     }

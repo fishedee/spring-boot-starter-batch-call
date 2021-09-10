@@ -67,19 +67,15 @@ public class TaskFinder {
                 if( List.class.isAssignableFrom(fieldClass) ||
                         Set.class.isAssignableFrom(fieldClass) ||
                         Map.class.isAssignableFrom(fieldClass)){
-                    log.info("container {}",fieldClass);
                     //尝试获取对应的方法
                     Method method = tryGetterMethod(clazz,field);
                     if( method == null ){
                         //找不到就略过吧，不用报错，因为这个不是注解的
-                        log.info("tryGetterMethod error {}",fieldClass);
                         continue;
                     }
                     Method method2 = this.isValidKeyMethod(method);
                     if( method2 == null){
                         //不合法就略过吧，不用报错，因为这个不是注解
-                        log.info("isValidKeyMethod error {}",fieldClass);
-
                         continue;
                     }
                     result.maybeKeyMethod.add(method2);
@@ -116,7 +112,6 @@ public class TaskFinder {
         }
         Class clazz = target.getClass();
         if( List.class.isAssignableFrom(clazz)){
-            log.info("list type {} classInfo {}",clazz);
             //List类型
             List targetList = (List)target;
             for( Object single : targetList){
@@ -139,8 +134,6 @@ public class TaskFinder {
 
             //非集合类型
             ClassInfo classInfo = this.getClassInfo(clazz);
-
-            log.info("normal type {} classInfo {}",clazz,classInfo);
             //提取自身的数据
             if( clazz == config.getKeyObjectType() ){
                 Object keyInstance = config.getCollectFunc().apply(target);

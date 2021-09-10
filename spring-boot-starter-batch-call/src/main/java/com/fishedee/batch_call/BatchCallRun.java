@@ -1,6 +1,6 @@
 package com.fishedee.batch_call;
 
-public class BatchCallRun{
+public class BatchCallRun<KeyType,ReturnType>{
 
     private Config config;
 
@@ -8,18 +8,27 @@ public class BatchCallRun{
         this.config = config;
     }
 
-    public BatchCallRun setBatchSize(int batchSize){
+    public BatchCallRun<KeyType,ReturnType> setBatchSize(int batchSize){
+        if( batchSize <= 0 ){
+            throw new InvalidArgumentException("batchSize ["+batchSize+"] must be positive");
+        }
         this.config.setBatchSize(batchSize);
         return this;
     }
 
-    public BatchCallRun setCacheEnabled(boolean cacheEnabled){
+    public BatchCallRun<KeyType,ReturnType> setCacheEnabled(boolean cacheEnabled){
         this.config.setCacheEnabled(cacheEnabled);
         return this;
     }
 
     public void run(Object target){
-        TaskRunner.sinlegton().run(this.config,target);
+        this.config.setFirstSkipCollectAndThenCall(false);
+        TaskRunner.sinlegton().collectAndThenCall(this.config,target);
     }
 
+    public BatchCallDirectRun<ReturnType> firstSkipCollectAndThenCall(KeyType object){
+        this.config.setFirstSkipCollectAndThenCall(true);
+        this.config.setFirstCallArgu(object);
+        return new BatchCallDirectRun<ReturnType>(this.config);
+    }
 }

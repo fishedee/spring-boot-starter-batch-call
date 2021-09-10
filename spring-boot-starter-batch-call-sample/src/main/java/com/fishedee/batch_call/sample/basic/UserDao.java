@@ -50,6 +50,28 @@ public class UserDao {
         return this.insertBatch2(users.subList(0,1));
     }
 
+    private List<List<Integer>> callBatchArgv = new ArrayList<>();
+
+    public void clearGetBatch2CallArgv(){
+        callBatchArgv.clear();
+    }
+
+    public List<List<Integer>> getGetBatch2CallArgv(){
+        return callBatchArgv;
+    }
+
+    public List<User> getBatch2(List<Integer> userIds){
+        List<Integer> newArgv = new ArrayList<>();
+        newArgv.addAll(userIds);
+        callBatchArgv.add(newArgv);
+
+        //故意取了全部数据
+        return this.jdbcTemplate.query("select * from user",
+                new Object[]{},
+                new int[]{},
+                new BeanPropertyRowMapper<>(User.class));
+    }
+
     public List<User> getAll(){
         return this.jdbcTemplate.query("select * from user",
                 new Object[]{},

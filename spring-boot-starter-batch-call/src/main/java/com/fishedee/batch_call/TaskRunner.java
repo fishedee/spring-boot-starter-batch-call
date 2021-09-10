@@ -4,8 +4,7 @@ import com.fishedee.batch_call.autoconfig.BatchCallProperties;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import javax.annotation.PostConstruct;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 public class TaskRunner {
     @Autowired
@@ -31,24 +30,13 @@ public class TaskRunner {
         globalTaskRunner = this;
     }
 
-    private int getBatchSize(int batchSize){
-        //手动配置优先
-        if( batchSize > 0 ){
-            return batchSize;
-        }
-        //配置文件次之
-        batchSize = properties.getBatchSize();
-        if( batchSize > 0 ){
-            return batchSize;
-        }
-        //保底逻辑
-        return 100;
+    public BatchCallProperties getProperties(){
+        return this.properties;
     }
 
-    private List<Task> singleBatch(Config config,List<Task> taskList,TaskCache cache){
+    private void singleBatch(Config config,List<Task> taskList,TaskCache cache,FunctionVoid<List<Object>> nextStepCallback){
         boolean cacheEnabled = config.isCacheEnabled();
         boolean hasDispatcherFunc = config.isHasDispatchFunc();
-        List<Task> nextStepTask = new ArrayList<>();
         if( config.getMatcher() == ResultMatch.KEY){
             //使用key匹配的方式
             TaskCache.Result taskCacheResult;
@@ -59,19 +47,16 @@ public class TaskRunner {
                 //不开启缓存
                 taskCacheResult = new TaskCache.Result();
                 taskCacheResult.setNoCacheTask(taskList);
-                taskCacheResult.setCacheResult(new ArrayList<>());
                 taskCacheResult.setHasCacheTask(new ArrayList<>());
             }
             if( taskCacheResult.getHasCacheTask().size()!= 0 && hasDispatcherFunc){
                 //对有缓存的部分，直接进行数据分发
                 List<Object> dispatchResult = dispatcher.dispatchKeyMatch(config,taskCacheResult.getHasCacheTask(),taskCacheResult.getCacheResult());
-                if( dispatchResult.size() != 0 ){
-                    nextStepTask.addAll(finder.find(config,dispatchResult));
-                }
+                nextStepCallback.apply(dispatchResult);
             }
             if( taskCacheResult.getNoCacheTask().size() != 0 ){
                 //对没有缓存的部分，先执行批量调用
-                List<List<Object>> result = executor.invokeKeyMatch(config,taskCacheResult.getNoCacheTask());
+                Map<Object,List<Object>> result = executor.invokeKeyMatch(config,taskCacheResult.getNoCacheTask());
                 if( cacheEnabled ){
                     //开启缓存的情况下，将数据放入缓存
                     cache.putAll(taskCacheResult.getNoCacheTask(),result);
@@ -79,9 +64,7 @@ public class TaskRunner {
                 if( hasDispatcherFunc ) {
                     //有数据分发操作
                     List<Object> dispatchResult = dispatcher.dispatchKeyMatch(config, taskCacheResult.getNoCacheTask(), result);
-                    if (dispatchResult.size() != 0) {
-                        nextStepTask.addAll(finder.find(config, dispatchResult));
-                    }
+                    nextStepCallback.apply(dispatchResult);
                 }
             }
         }else{
@@ -91,43 +74,59 @@ public class TaskRunner {
             if( hasDispatcherFunc ){
                 //有数据分发操作
                 List<Object> dispatchResult = dispatcher.dispatchSequenceMatch(config,taskList,result);
-                if( dispatchResult.size() != 0 ){
-                    nextStepTask.addAll(finder.find(config,dispatchResult));
-                }
+                nextStepCallback.apply(dispatchResult);
             }
-
         }
-        return nextStepTask;
     }
 
-    public void run(Config config,Object target){
-        //每个任务一个单独的cache
+    public void collectAndThenCall(Config config,Object data){
         TaskCache cache = new TaskCache();
-        List<Task> taskList = finder.find(config,target);
-        int batchSize = this.getBatchSize(config.getBatchSize());
+        run(config,data,cache);
+    }
 
-        while( taskList.size() != 0){
-            //只允许同一种Class，同一个Field的任务在运行
-            List<Task> nextStepTask = new ArrayList<>();
+    public Object skipCollectAndThenCall(Config config,Object firstArgv){
+        try{
+            TaskCache cache = new TaskCache();
+            Task task = new Task();
+            task.setInstance(config.getKeyObjectType().newInstance());
+            task.setKey(firstArgv);
+            List<Object> result = new ArrayList<>();
+            this.singleBatch(config,Arrays.asList(task),cache,(nextStep)->{
+                result.addAll(nextStep);
+            });
+            this.run(config,result,cache);
+            return result.get(0);
+        }catch(InstantiationException e){
+            throw new InvokeReflectMethodException(e);
+        }catch(IllegalAccessException e){
+            throw new InvokeReflectMethodException(e);
+        }
+    }
 
+    private void run(Config config,Object target,TaskCache cache){
+        //每个任务一个单独的cache
+        List<Task> initTaskList = finder.find(config,target);
+        Queue<Task> nextStepTask = new ArrayDeque<>();
+        nextStepTask.addAll(initTaskList);
+        int batchSize = config.getBatchSize();
+
+        while( nextStepTask.size() != 0){
             //分批执行
-            int taskListBegin = 0;
-            while( taskListBegin < taskList.size()){
-                int taskListEnd = taskList.size();
-                if( taskListEnd - taskListBegin > batchSize) {
-                    taskListEnd = taskListBegin + batchSize;
+            //执行单个批次
+            List<Task> currentTask = new ArrayList<>();
+            if( nextStepTask.size() < batchSize){
+                currentTask.addAll(nextStepTask);
+                nextStepTask.clear();
+            }else{
+                for( int i = 0 ;i != batchSize;i++){
+                    currentTask.add(nextStepTask.remove());
                 }
-                //执行单个批次
-                List<Task> currentTask = taskList.subList(taskListBegin,taskListEnd);
-                List<Task> currentNextStepTask = this.singleBatch(config,currentTask,cache);
-
-                //调整下一个批次的起点，以及添加nextStepTask
-                taskListBegin = taskListEnd;
-                nextStepTask.addAll(currentNextStepTask);
             }
-
-            //转换到下一步的任务列表
-            taskList = nextStepTask;
+            this.singleBatch(config,currentTask,cache,(nextStepList)->{
+                //调整下一个的nextStepTask
+                List<Task> newTask = finder.find(config,nextStepList);
+                nextStepTask.addAll(newTask);
+            });
         }
     }
 }

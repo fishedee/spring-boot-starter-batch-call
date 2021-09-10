@@ -29,7 +29,7 @@ public class TaskExecutor {
         return objectList;
     }
 
-    public List<List<Object>> invokeKeyMatch(Config config,List<Task> tasks){
+    public Map<Object,List<Object>> invokeKeyMatch(Config config,List<Task> tasks){
         //聚合数据
         List<Object> invokeArguments = new ArrayList<>();
         for( Task task :tasks){
@@ -52,15 +52,15 @@ public class TaskExecutor {
             }
             valueList.add(singleResult);
         }
-        //将结果写入到List
-        List<List<Object>> finalResultList = new ArrayList<>();
-        for( Task task :tasks ){
-            List<Object> singleResult = mapResult.get(task.getKey());
-            if( singleResult == null ){
-                singleResult = new ArrayList<>();
+
+        //对于没有找到的也要写入到mapResult里面
+        //是为了让这一部分也能成为缓存，找不到也是一个值，需要写入缓存的
+        for( Task task:tasks){
+            boolean hasFound = mapResult.containsKey(task.getKey());
+            if( hasFound == false ){
+                mapResult.put(task.getKey(),new ArrayList<>());
             }
-            finalResultList.add(singleResult);
         }
-        return finalResultList;
+        return mapResult;
     }
 }

@@ -21,30 +21,30 @@ public class BatchCall<KeyObjectType,KeyType> {
         return new BatchCallVoidDispatch<KeyObjectType>(this.config);
     }
 
-    public <CallTargetType,CallResultType> BatchCallDispatch<KeyObjectType,CallResultType> call(CallTargetType callTarget, BiFunction<CallTargetType, List<KeyType>,List<CallResultType>> callFunc){
+    public <CallTargetType,CallResultType> BatchCallDispatch<KeyObjectType,CallResultType,KeyType> call(CallTargetType callTarget, BiFunction<CallTargetType, List<KeyType>,List<CallResultType>> callFunc){
         this.config.setCallFunc(callFunc);
         this.config.setCallTarget(callTarget);
         this.config.setMatcher(ResultMatch.SEQUENCE);
-        return new BatchCallDispatch<KeyObjectType,CallResultType>(this.config);
+        return new BatchCallDispatch<>(this.config);
     }
 
-    public <CallTargetType,CallResultType> BatchCallDispatch<KeyObjectType,CallResultType> call(CallTargetType callTarget, BiFunction<CallTargetType, List<KeyType>,List<CallResultType>> callFunc,ResultMatchByKey<CallResultType,KeyType> matcherByKey){
+    public <CallTargetType,CallResultType> BatchCallDispatch<KeyObjectType,CallResultType,KeyType> call(CallTargetType callTarget, BiFunction<CallTargetType, List<KeyType>,List<CallResultType>> callFunc,ResultMatchByKey<CallResultType,KeyType> matcherByKey){
         this.config.setCallFunc(callFunc);
         this.config.setCallTarget(callTarget);
         this.config.setMatcher(ResultMatch.KEY);
         this.config.setCallResultMatchByKey(matcherByKey.getMatcher());
         this.config.setHasCallResultMatchByKeyDefault(false);
-        return new BatchCallDispatch<KeyObjectType,CallResultType>(this.config);
+        return new BatchCallDispatch<>(this.config);
     }
 
-    public <CallTargetType,CallResultType> BatchCallDispatch<KeyObjectType,CallResultType> call(CallTargetType callTarget, BiFunction<CallTargetType, List<KeyType>,List<CallResultType>> callFunc,ResultMatchByKey<CallResultType,KeyType> matcherByKey,CallResultType defaultResult){
+    public <CallTargetType,CallResultType> BatchCallDispatch<KeyObjectType,CallResultType,KeyType> call(CallTargetType callTarget, BiFunction<CallTargetType, List<KeyType>,List<CallResultType>> callFunc,ResultMatchByKey<CallResultType,KeyType> matcherByKey,CallResultType defaultResult){
         this.config.setCallFunc(callFunc);
         this.config.setCallTarget(callTarget);
         this.config.setMatcher(ResultMatch.KEY);
         this.config.setCallResultMatchByKey(matcherByKey.getMatcher());
         this.config.setHasCallResultMatchByKeyDefault(true);
         this.config.setCallResultMatchByKeyDefault(defaultResult);
-        return new BatchCallDispatch<KeyObjectType,CallResultType>(this.config);
+        return new BatchCallDispatch<>(this.config);
     }
 
 }

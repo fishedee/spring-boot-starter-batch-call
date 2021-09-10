@@ -9,4 +9,6 @@ public class BatchCallProperties {
     private boolean enable;
 
     private int batchSize = 1000;
+
+    private boolean cacheEnabled = false;
 }
