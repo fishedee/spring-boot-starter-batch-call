@@ -1,18 +1,18 @@
 package com.fishedee.batch_call;
 
 public class CallResultNotFoundException extends BatchCallException{
-    private String debugName;
+    private Class targetClass;
 
     private Object key;
 
-    public CallResultNotFoundException(String debugName,Object key){
-        super("找不到"+debugName+"ID为"+key+"结果");
-        this.debugName = debugName;
+    public CallResultNotFoundException(Class clazz,Object key){
+        super("在"+clazz.getName()+"中找不到ID为"+key+"结果");
+        this.targetClass = clazz;
         this.key = key;
     }
 
-    public String getDebugName(){
-        return this.debugName;
+    public Class getTargetClass(){
+        return this.targetClass;
     }
 
     public Object getKey(){

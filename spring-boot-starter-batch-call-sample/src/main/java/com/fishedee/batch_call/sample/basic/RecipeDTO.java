@@ -24,6 +24,13 @@ public class RecipeDTO {
             this.name = user.getName();
             this.level = user.getLevel();
         }
+
+        public void setUser2(User user){
+            if( user!= null){
+                this.name = user.getName();
+                this.level = user.getLevel();
+            }
+        }
     }
 
     private List<Step> stepList = new ArrayList<>();

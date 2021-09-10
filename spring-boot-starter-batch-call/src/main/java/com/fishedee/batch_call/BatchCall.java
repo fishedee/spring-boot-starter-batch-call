@@ -21,14 +21,14 @@ public class BatchCall<KeyObjectType,KeyType> {
         return new BatchCallVoidDispatch<KeyObjectType>(this.config);
     }
 
-    public <CallTargetType,CallResultType> BatchCallDispatch<KeyObjectType,CallResultType> callForResult(CallTargetType callTarget, BiFunction<CallTargetType, List<KeyType>,List<CallResultType>> callFunc){
+    public <CallTargetType,CallResultType> BatchCallDispatch<KeyObjectType,CallResultType> call(CallTargetType callTarget, BiFunction<CallTargetType, List<KeyType>,List<CallResultType>> callFunc){
         this.config.setCallFunc(callFunc);
         this.config.setCallTarget(callTarget);
         this.config.setMatcher(ResultMatch.SEQUENCE);
         return new BatchCallDispatch<KeyObjectType,CallResultType>(this.config);
     }
 
-    public <CallTargetType,CallResultType> BatchCallDispatch<KeyObjectType,CallResultType> callForResult(CallTargetType callTarget, BiFunction<CallTargetType, List<KeyType>,List<CallResultType>> callFunc,ResultMatchByKey<CallResultType,KeyType> matcherByKey){
+    public <CallTargetType,CallResultType> BatchCallDispatch<KeyObjectType,CallResultType> call(CallTargetType callTarget, BiFunction<CallTargetType, List<KeyType>,List<CallResultType>> callFunc,ResultMatchByKey<CallResultType,KeyType> matcherByKey){
         this.config.setCallFunc(callFunc);
         this.config.setCallTarget(callTarget);
         this.config.setMatcher(ResultMatch.KEY);
@@ -37,7 +37,7 @@ public class BatchCall<KeyObjectType,KeyType> {
         return new BatchCallDispatch<KeyObjectType,CallResultType>(this.config);
     }
 
-    public <CallTargetType,CallResultType> BatchCallDispatch<KeyObjectType,CallResultType> callForResult(CallTargetType callTarget, BiFunction<CallTargetType, List<KeyType>,List<CallResultType>> callFunc,ResultMatchByKey<KeyType,CallResultType> matcherByKey,CallResultType defaultResult){
+    public <CallTargetType,CallResultType> BatchCallDispatch<KeyObjectType,CallResultType> call(CallTargetType callTarget, BiFunction<CallTargetType, List<KeyType>,List<CallResultType>> callFunc,ResultMatchByKey<CallResultType,KeyType> matcherByKey,CallResultType defaultResult){
         this.config.setCallFunc(callFunc);
         this.config.setCallTarget(callTarget);
         this.config.setMatcher(ResultMatch.KEY);

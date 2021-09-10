@@ -8,6 +8,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 
 import java.sql.Types;
+import java.util.ArrayList;
 import java.util.List;
 
 @Component
@@ -30,6 +31,23 @@ public class UserDao {
         for(User user :users){
             this.jdbcTemplate.update("insert into user(id,name,level) values(?,?,?)",user.getId(),user.getName(),user.getLevel());
         }
+    }
+
+    //从id转换为name
+    public List<Integer> insertBatch2(List<User> users){
+        List<Integer> result = new ArrayList<>();
+        int id = 30001;
+        for(User user :users){
+            result.add(id);
+            this.jdbcTemplate.update("insert into user(id,name,level) values(?,?,?)",id,user.getName(),user.getLevel());
+            id++;
+        }
+        return result;
+    }
+
+    //从id转换为name
+    public List<Integer> insertBatch3(List<User> users){
+        return this.insertBatch2(users.subList(0,1));
     }
 
     public List<User> getAll(){

@@ -24,8 +24,10 @@ public class CountryDTO {
             return single;
         }
 
-        public void addFinish(){
+        private int insertId;
 
+        public void addFinish(int insertId){
+            this.insertId = insertId;
         }
     }
 

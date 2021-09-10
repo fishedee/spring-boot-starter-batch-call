@@ -24,7 +24,7 @@ public class TaskExecutor {
         //获取结果
         List<Object> objectList = (List<Object>)result;
         if( objectList.size() != tasks.size() ){
-            throw new InvalidCallResultException("Call Result size "+objectList.size()+" is not equal to task size "+tasks.size());
+            throw new CallResultSizeNotEqualException(invokeBean.getClass(),tasks.size(),objectList.size());
         }
         return objectList;
     }

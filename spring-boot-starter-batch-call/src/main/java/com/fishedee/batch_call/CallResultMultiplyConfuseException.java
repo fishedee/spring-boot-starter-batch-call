@@ -1,18 +1,18 @@
 package com.fishedee.batch_call;
 
 public class CallResultMultiplyConfuseException extends BatchCallException{
-    private String debugName;
+    private Class targetClass;
 
     private Object key;
 
-    public CallResultMultiplyConfuseException(String debugName,Object key){
-        super(debugName+"ID"+key+"对应的结果太多");
-        this.debugName = debugName;
+    public CallResultMultiplyConfuseException(Class clazz,Object key){
+        super("在"+clazz.getName()+"中找到ID"+key+"对应的结果太多");
+        this.targetClass = clazz;
         this.key = key;
     }
 
-    public String getDebugName(){
-        return this.debugName;
+    public Class getTargetClass(){
+        return this.targetClass;
     }
 
     public Object getKey(){

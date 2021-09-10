@@ -12,7 +12,8 @@ public class TaskDispatcher {
         List<Object> nextStepList = new ArrayList<>();
 
         boolean allowResultNotFound = config.isHasCallResultMatchByKeyDefault();
-        String debugName = config.getCallTarget().getClass().getName();
+        Class targetClass = config.getCallTarget().getClass();
+        String debugName = targetClass.getName();
 
         //回调数据
         BiFunction dispatchFunc = config.getDispatchFunc();
@@ -32,10 +33,10 @@ public class TaskDispatcher {
                     if( allowResultNotFound ){
                         nextStep = dispatchFunc.apply(task.getInstance(),defaultResult);
                     }else{
-                        throw new CallResultNotFoundException(debugName,task.getKey());
+                        throw new CallResultNotFoundException(targetClass,task.getKey());
                     }
                 }else if( result.size() != 1 ){
-                    throw new CallResultMultiplyConfuseException(debugName,task.getKey());
+                    throw new CallResultMultiplyConfuseException(targetClass,task.getKey());
                 }
             }
             if( nextStep != null ){

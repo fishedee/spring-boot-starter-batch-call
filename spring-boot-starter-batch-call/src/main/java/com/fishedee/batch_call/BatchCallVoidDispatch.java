@@ -13,6 +13,15 @@ public class BatchCallVoidDispatch<KeyObjectType> {
         this.config.setHasDispatchFunc(true);
         this.config.setDipatchFuncArguListType(false);
         this.config.setDispatchFunc((Object a,Object b)->{
+            return dispatchFunc.apply((KeyObjectType)a);
+        });
+        return new BatchCallRun(this.config);
+    }
+
+    public BatchCallRun dispatch(FunctionVoid<KeyObjectType> dispatchFunc){
+        this.config.setHasDispatchFunc(true);
+        this.config.setDipatchFuncArguListType(false);
+        this.config.setDispatchFunc((Object a,Object b)->{
             dispatchFunc.apply((KeyObjectType)a);
             return null;
         });

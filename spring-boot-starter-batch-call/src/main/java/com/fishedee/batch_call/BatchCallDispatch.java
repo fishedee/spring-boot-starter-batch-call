@@ -26,7 +26,14 @@ public class BatchCallDispatch<KeyObjectType,KeyType> {
         return new BatchCallRun(this.config);
     }
 
-    public BatchCallRun dispatchList(BiFunctionVoid<KeyObjectType, List<KeyType>> dispatchFunc){
+    public<ReturnType> BatchCallRun dispatchToList(BiFunction<KeyObjectType, List<KeyType>,ReturnType> dispatchFunc){
+        this.config.setHasDispatchFunc(true);
+        this.config.setDipatchFuncArguListType(true);
+        this.config.setDispatchFunc(dispatchFunc);
+        return new BatchCallRun(this.config);
+    }
+
+    public BatchCallRun dispatchToList(BiFunctionVoid<KeyObjectType, List<KeyType>> dispatchFunc){
         this.config.setHasDispatchFunc(true);
         this.config.setDipatchFuncArguListType(true);
         this.config.setDispatchFunc((Object a,Object b)->{

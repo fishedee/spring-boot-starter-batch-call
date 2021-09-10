@@ -45,5 +45,5 @@ public class Config {
     private int batchSize = 0;
 
     //是否打开缓存
-    private boolean isCacheEnabled;
+    private boolean isCacheEnabled = false;
 }
