@@ -19,6 +19,7 @@ import org.springframework.context.annotation.Import;
 import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 @DataJpaTest(includeFilters = @ComponentScan.Filter(
         type= FilterType.ASSIGNABLE_TYPE,
@@ -130,6 +131,41 @@ public class FinderTest {
                 JsonAssertUtil.checkEqualStrict("{name:'cat',level:34,userId:10002,decription:null}",step);
             }
             i++;
+        }
+    }
+
+    @Test
+    public void combineNoBatch() {
+        Map<Integer, RecipeDTO> hashMap = new LinkedHashMap<>();
+        for (int i = 0; i != 10; i++) {
+            hashMap.put(i, recipeDTO);
+        }
+
+        //收集userId
+        List<Integer> userIds = hashMap.values().stream().map((recipeDTO)->{
+            return recipeDTO.getStepList().stream().map((single)->single.getUserId()).collect(Collectors.toList());
+        }).reduce((a,b)->{
+            a.addAll(b);
+            return a;
+        }).get();
+
+        //批量调用
+        Map<Integer,User> userMap = userDao.getBatch(userIds).stream()
+                .collect(Collectors.toMap(e->e.getId(), e->e));
+
+        hashMap.values().stream().forEach((recipeDTO -> {
+            recipeDTO.getStepList().forEach((step)->{
+                step.setUser(userMap.get(step.getUserId()));
+            });
+        }));
+
+        //校验
+        for( RecipeDTO recipeDTO :hashMap.values()){
+            assertEquals(4,recipeDTO.getStepList().size());
+            JsonAssertUtil.checkEqualStrict("{name:'fish',level:12,userId:10001,decription:null}",recipeDTO.getStepList().get(0));
+            JsonAssertUtil.checkEqualStrict("{name:'dog',level:56,userId:10003,decription:null}",recipeDTO.getStepList().get(1));
+            JsonAssertUtil.checkEqualStrict("{name:'cat',level:34,userId:10002,decription:null}",recipeDTO.getStepList().get(2));
+            JsonAssertUtil.checkEqualStrict("{name:'fish',level:12,userId:10001,decription:null}",recipeDTO.getStepList().get(3));
         }
     }
 

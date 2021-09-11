@@ -32,4 +32,8 @@ public class CategoryDTO {
         }).collect(Collectors.toList());
         return this.children;
     }
+
+    public void setChildren2(List<CategoryDTO> children){
+        this.children = children;
+    }
 }

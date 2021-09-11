@@ -10,6 +10,12 @@ import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.FilterType;
 import org.springframework.context.annotation.Import;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 @DataJpaTest(includeFilters = @ComponentScan.Filter(
@@ -62,6 +68,26 @@ public class KeyMatchTest {
     }
 
     @Test
+    public void noKeyMatch(){
+        List<Integer> userIds = recipeDTO.getStepList().stream().
+                map((single)->single.getUserId())
+                .collect(Collectors.toList());
+
+        Map<Integer,User> userMap = userDao.getBatch(userIds).stream()
+                .collect(Collectors.toMap(e->e.getId(), e->e));
+
+        recipeDTO.getStepList().forEach((step)->{
+            step.setUser(userMap.get(step.getUserId()));
+        });
+
+        assertEquals(4,recipeDTO.getStepList().size());
+        JsonAssertUtil.checkEqualStrict("{name:'fish',level:12,userId:10001,decription:null}",recipeDTO.getStepList().get(0));
+        JsonAssertUtil.checkEqualStrict("{name:'dog',level:56,userId:10003,decription:null}",recipeDTO.getStepList().get(1));
+        JsonAssertUtil.checkEqualStrict("{name:'cat',level:34,userId:10002,decription:null}",recipeDTO.getStepList().get(2));
+        JsonAssertUtil.checkEqualStrict("{name:'fish',level:12,userId:10001,decription:null}",recipeDTO.getStepList().get(3));
+    }
+
+    @Test
     public void keyMatchAndDispatch(){
         new BatchCallTask()
             .collectKey(RecipeDTO.Step.class,RecipeDTO.Step::getUserId)
@@ -74,6 +100,25 @@ public class KeyMatchTest {
         JsonAssertUtil.checkEqualStrict("{name:'dog',level:56,userId:10003,decription:null}",recipeDTO.getStepList().get(1));
         JsonAssertUtil.checkEqualStrict("{name:'cat',level:34,userId:10002,decription:null}",recipeDTO.getStepList().get(2));
         JsonAssertUtil.checkEqualStrict("{name:'fish',level:12,userId:10001,decription:null}",recipeDTO.getStepList().get(3));
+    }
+
+
+    @Test
+    public void keyMatchAndDispatchListNoBatch(){
+        List<Integer> driverIds = parkingDTO.getFloorList().stream().map((single)->single.getDriverId()).collect(Collectors.toList());
+
+        Map<Integer,List<Car>> carsMap =  carDao.getByDriverId(driverIds).stream()
+                .collect(Collectors.groupingBy(Car::getDriverId));
+
+        parkingDTO.getFloorList().stream().forEach((single)->{
+            List<Car> carList = carsMap.get(single.getDriverId());
+            single.setCarList(carList!=null?carList:new ArrayList<>());
+        });
+
+        assertEquals(3,parkingDTO.getFloorList().size());
+        JsonAssertUtil.checkEqualStrict("{driverId:10001,carList:[{id:20001,driverId:10001,name:'车1',color:'red'}]}",parkingDTO.getFloorList().get(0));
+        JsonAssertUtil.checkEqualStrict("{driverId:10002,carList:[{id:20002,driverId:10002,name:'车2',color:'green'},{id:20003,driverId:10002,name:'车3',color:'blue'}]}",parkingDTO.getFloorList().get(1));
+        JsonAssertUtil.checkEqualStrict("{driverId:10003,carList:[]}",parkingDTO.getFloorList().get(2));
     }
 
     @Test

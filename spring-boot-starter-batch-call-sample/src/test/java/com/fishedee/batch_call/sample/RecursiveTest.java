@@ -30,6 +30,14 @@ public class RecursiveTest {
     @Autowired
     private Category2Dao category2Dao;
 
+    /*
+    递归测试的接口设计要求：
+    * 支持getAll操作
+    * 支持只拉取某树本身
+    * 支持只拉取某树的所有子树
+    * 支持拉取某树本身和该树的所有子树
+    * 不同操作之间对使用者的变化尽可能少
+     */
     @Test
     public void getAll(){
         CategoryDTO categoryDTO = new CategoryDTO();
@@ -65,6 +73,49 @@ public class RecursiveTest {
                     "]}" +
                 "]}" +
                 "]}\n",categoryDTO);
+    }
+
+
+    private List<CategoryDTO> getCategoryChildren(int categoryId){
+        List<Category> categories = this.categoryDao.getByParent(Arrays.asList(categoryId));
+
+        List<CategoryDTO> initCategoryDTO = categories.stream().map(CategoryDTO::new).collect(Collectors.toList());
+
+        initCategoryDTO.stream().forEach((category -> category.setChildren2(getCategoryChildren(category.getId()))));
+
+        return initCategoryDTO;
+    }
+
+    @Test
+    public void getSpecifyCategoryAndSubCategoryNoBatch() {
+        List<Category> categories = categoryDao.getBatch(Arrays.asList(30002, 30003));
+
+        List<CategoryDTO> initCategoryDTO = categories.stream().map(CategoryDTO::new).collect(Collectors.toList());
+
+        categoryDao.clearGetByParentCallArgv();
+
+        initCategoryDTO.stream().forEach((category -> category.setChildren2(getCategoryChildren(category.getId()))));
+
+        JsonAssertUtil.checkEqualStrict("["+
+                "{\"id\":30002,\"parentId\":0,\"name\":\"分类2\",\"children\":[" +
+                "{\"id\":30006,\"parentId\":30002,\"name\":\"分类6\",\"children\":[" +
+                "{\"id\":30007,\"parentId\":30006,\"name\":\"分类7\",\"children\":[" +
+                "{\"id\":30008,\"parentId\":30007,\"name\":\"分类8\",\"children\":[]}" +
+                "]}" +
+                "]}" +
+                "]}," +
+                "{\"id\":30003,\"parentId\":30001,\"name\":\"分类3\",\"children\":[" +
+                "{\"id\":30005,\"parentId\":30003,\"name\":\"分类5\",\"children\":[]}" +
+                "]}" +
+                "]",initCategoryDTO);
+
+        JsonAssertUtil.checkEqualStrict("[" +
+                "[30002]," +
+                "[30006]," +
+                "[30007]," +
+                "[30008]," +
+                "[30003]," +
+                "[30005]]",categoryDao.getGetByParentCallArgv());
     }
 
     @Test
