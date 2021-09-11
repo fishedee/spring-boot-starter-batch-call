@@ -1,22 +1,22 @@
 {
-  "name": "spring-boot-starter-id-generator",
+  "name": "spring-boot-starter-batch-call",
   "version": "1.0.0",
-  "description": "Java的ID生成器",
+  "description": "Java的batch-call",
   "main": "index.js",
   "scripts": {
-    "deploy":"mvn clean && gh-pages -d spring-boot-starter-id-generator -b jitpack",
+    "deploy": "mvn clean && gh-pages -d spring-boot-starter-batch-call -b jitpack",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/fishedee/spring-boot-starter-id-generator.git"
+    "url": "git+https://github.com/fishedee/spring-boot-starter-batch-call.git"
   },
   "author": "",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/fishedee/spring-boot-starter-id-generator/issues"
+    "url": "https://github.com/fishedee/spring-boot-starter-batch-call/issues"
   },
-  "homepage": "https://github.com/fishedee/spring-boot-starter-id-generator#readme",
+  "homepage": "https://github.com/fishedee/spring-boot-starter-batch-call#readme",
   "devDependencies": {
     "gh-pages": "^3.2.3"
   }
