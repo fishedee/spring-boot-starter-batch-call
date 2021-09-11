@@ -1,6 +1,7 @@
 package com.fishedee.batch_call.sample;
 
 import com.fishedee.batch_call.BatchCallTask;
+import com.fishedee.batch_call.InvalidArgumentException;
 import com.fishedee.batch_call.JsonAssertUtil;
 import com.fishedee.batch_call.ResultMatchByKey;
 import com.fishedee.batch_call.autoconfig.BatchCallAutoConfiguration;
@@ -77,5 +78,39 @@ public class BatchTest {
                 "[10003,10002,10003],"+
                 "[10002,10003]"+
                 "]",userDao.getGetBatch2CallArgv());
+    }
+
+    @Test
+    public void testBatchNegative(){
+        List<People3> peopleList = Arrays.asList(
+                new People3(10001),
+                new People3(10001)
+        );
+
+        assertThrows(InvalidArgumentException.class,()->{
+            new BatchCallTask()
+                    .collectKey(People3.class,People3::getUserId)
+                    .call(userDao,UserDao::getBatch2,new ResultMatchByKey<>(User::getId))
+                    .dispatch(People3::setUserRecursive)
+                    .setBatchSize(-1)
+                    .run(peopleList);
+        });
+    }
+
+    @Test
+    public void testBatchZero(){
+        List<People3> peopleList = Arrays.asList(
+                new People3(10001),
+                new People3(10001)
+        );
+
+        assertThrows(InvalidArgumentException.class,()->{
+            new BatchCallTask()
+                    .collectKey(People3.class,People3::getUserId)
+                    .call(userDao,UserDao::getBatch2,new ResultMatchByKey<>(User::getId))
+                    .dispatch(People3::setUserRecursive)
+                    .setBatchSize(0)
+                    .run(peopleList);
+        });
     }
 }

@@ -1,6 +1,7 @@
 package com.fishedee.batch_call.sample;
 
 import com.fishedee.batch_call.BatchCallTask;
+import com.fishedee.batch_call.JsonAssertUtil;
 import com.fishedee.batch_call.ResultMatchByKey;
 import com.fishedee.batch_call.autoconfig.BatchCallAutoConfiguration;
 import com.fishedee.batch_call.sample.basic.People2;
@@ -24,7 +25,6 @@ import static org.junit.jupiter.api.Assertions.*;
 ))
 @Import(BatchCallAutoConfiguration.class)
 public class CacheTest {
-    //FIXME返回数据assert
     @Autowired
     private UserDao userDao;
 
@@ -41,8 +41,15 @@ public class CacheTest {
                 .dispatch(People2::setUserRecursive)
                 .run(people2);
 
-        assertEquals(3,userDao.getGetBatch2CallArgv().size());
+        JsonAssertUtil.checkEqualStrict("[[10001],[10002],[10003]]",userDao.getGetBatch2CallArgv());
 
+
+
+        JsonAssertUtil.checkEqualStrict("{\"decription\":null,\"userId\":10001,\"name\":\"fish\",\"level\":12,\"child\":" +
+                "{\"decription\":null,\"userId\":10002,\"name\":\"cat\",\"level\":34,\"child\":" +
+                "{\"decription\":null,\"userId\":10003,\"name\":\"dog\",\"level\":56,\"child\":null}" +
+                "}" +
+                "}\n",people2);
     }
 
     @Test
@@ -59,7 +66,14 @@ public class CacheTest {
                 .setCacheEnabled(true)
                 .run(people2);
 
-        assertEquals(1,userDao.getGetBatch2CallArgv().size());
+        JsonAssertUtil.checkEqualStrict("[[10001]]",userDao.getGetBatch2CallArgv());
+
+
+        JsonAssertUtil.checkEqualStrict("{\"decription\":null,\"userId\":10001,\"name\":\"fish\",\"level\":12,\"child\":" +
+                "{\"decription\":null,\"userId\":10002,\"name\":\"cat\",\"level\":34,\"child\":" +
+                "{\"decription\":null,\"userId\":10003,\"name\":\"dog\",\"level\":56,\"child\":null}" +
+                "}" +
+                "}\n",people2);
     }
 
     @Test
@@ -83,7 +97,9 @@ public class CacheTest {
                 .groupThenDispatch(People2::setUserRecursive2)
                 .run(listPeople);
 
-        assertEquals(3,userDao.getGetBatch2CallArgv().size());
+        JsonAssertUtil.checkEqualStrict("[[10001,10005,10006],[10005,10006],[10006]]",userDao.getGetBatch2CallArgv());
+
+
     }
 
     @Test
@@ -108,6 +124,16 @@ public class CacheTest {
                 .setCacheEnabled(true)
                 .run(listPeople);
 
-        assertEquals(1,userDao.getGetBatch2CallArgv().size());
+        JsonAssertUtil.checkEqualStrict("[[10001,10005,10006]]",userDao.getGetBatch2CallArgv());
+
+
+        JsonAssertUtil.checkEqualStrict("[{\"decription\":null,\"userId\":10001,\"name\":\"fish\",\"level\":12,\"child\":" +
+                "{\"decription\":null,\"userId\":10005,\"name\":null,\"level\":0,\"child\":" +
+                    "{\"decription\":null,\"userId\":10006,\"name\":null,\"level\":0,\"child\":null}" +
+                "}" +
+                "}," +
+                "{\"decription\":null,\"userId\":10005,\"name\":null,\"level\":0,\"child\":" +
+                    "{\"decription\":null,\"userId\":10006,\"name\":null,\"level\":0,\"child\":null}}," +
+                "{\"decription\":null,\"userId\":10006,\"name\":null,\"level\":0,\"child\":null}]\n",listPeople);
     }
 }
