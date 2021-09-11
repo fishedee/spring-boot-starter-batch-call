@@ -18,26 +18,17 @@ public class Config {
     //收集的对象回调方法
     private BiFunction dispatchFunc;
 
-    //是否首次越过skipCollect
-    private boolean isFirstCallThenRun;
-
-    //首次调用call的参数，仅在isFirstSkipCollect为true时有效
-    //输入参数
-    private List<Object> firstCallArgu;
-
-    //首次调用call的参数，仅在isFirstSkipCollect为true时有效
-    //输出结果后获取key
-    private Function firstCallGetResultKey;
-
-    //首次调用call的参数，仅在isFirstSkipCollect为true时有效
-    //将结果进行转换
-    private Function firstCallGetResultConvert;
-
     //是否有对象回调方法
     private boolean hasDispatchFunc;
 
     //是否回调方法为List参数
     private boolean isDipatchFuncArguListType;
+
+    //是批量调用，还是本地查找数据
+    private boolean isCallMode;
+
+    //本地数据
+    private List<Object> findResult;
 
     //批量调用的对象
     private Object callTarget;

@@ -38,7 +38,7 @@ public class TaskRunner {
     private void singleBatch(Config config,List<Task> taskList,TaskCache cache,FunctionVoid<List<Object>> nextStepCallback){
         boolean cacheEnabled = config.isCacheEnabled();
         boolean hasDispatcherFunc = config.isHasDispatchFunc();
-        Function callResultMatchByKey = config.getCallResultMatchByKey();
+        boolean isCallMode = config.isCallMode();
         if( config.getMatcher() == ResultMatch.KEY){
             //使用key匹配的方式
             TaskCache.Result taskCacheResult;
@@ -57,11 +57,20 @@ public class TaskRunner {
                 nextStepCallback.apply(dispatchResult);
             }
             if( taskCacheResult.getNoCacheTask().size() != 0 ){
-                //对没有缓存的部分，先执行批量调用
-                Map<Object,List<Object>> result = executor.invokeKeyMatch(config,taskCacheResult.getNoCacheTask(),callResultMatchByKey);
+                Map<Object,List<Object>> result;
+                if( isCallMode ){
+                    //对没有缓存的部分，先执行批量调用
+                    result = executor.invokeKeyMatch(config,taskCacheResult.getNoCacheTask());
+                }else{
+                    //不能调用的情况下，设置默认值
+                    result = new HashMap<>();
+                    for( Task task : taskCacheResult.getNoCacheTask() ){
+                        result.put(task.getKey(),new ArrayList<>());
+                    }
+                }
                 if( cacheEnabled ){
                     //开启缓存的情况下，将数据放入缓存
-                    cache.putAll(taskCacheResult.getNoCacheTask(),result);
+                    cache.putAll(result);
                 }
                 if( hasDispatcherFunc ) {
                     //有数据分发操作
@@ -81,56 +90,30 @@ public class TaskRunner {
         }
     }
 
-    public void directRun(Config config, Object data){
-        TaskCache cache = new TaskCache();
-        run(config,data,cache);
-    }
-
-    private List<Object> firstCall(TaskCache cache,Config config){
-        boolean cacheEnabled = config.isCacheEnabled();
-        Function firstCallGetResultKey = config.getFirstCallGetResultKey();
-        Function firstCallGetResultConvert = config.getFirstCallGetResultConvert();
-        //创建首次任务
-        List<Task> taskList = new ArrayList<>();
-        for( Object argv : config.getFirstCallArgu() ){
-            Task task = new Task();
-            task.setKey(argv);
-            taskList.add(task);
+    private void initCache(Config config,TaskCache taskCache){
+        if( config.isCallMode() ){
+            return;
         }
-
-        //执行批量调用
-        Map<Object,List<Object>> result = executor.invokeKeyMatch(config,taskList,firstCallGetResultKey);
-
-        if( cacheEnabled ){
-            //开启缓存的情况下，将数据放入缓存
-            cache.putAll(taskList,result);
-        }
-
-        //结果转换
-        Class targetClass = config.getCallTarget().getClass();
-        List<Object> convertResult = new ArrayList<>();
-        for( Task task :taskList){
-            List<Object> singleResult = result.get(task.getKey());
-            if( singleResult.size() == 0  ){
-                throw new CallResultNotFoundException(targetClass,task.getKey());
-            }else if( singleResult.size() < 0 ){
-                throw new CallResultMultiplyConfuseException(targetClass,task.getKey());
-            }else{
-                convertResult.add(firstCallGetResultConvert.apply(singleResult));
+        //在查找模式中，首先将数据导入到cache中
+        List<Object> findResult = config.getFindResult();
+        Function findResultMatchByKey = config.getCallResultMatchByKey();
+        Map<Object,List<Object>> cache = new HashMap<>();
+        for( Object value : findResult ){
+            Object key = findResultMatchByKey.apply(value);
+            List<Object> resultInCache = cache.get(key);
+            if( resultInCache == null ){
+                resultInCache = new ArrayList<>();
+                cache.put(key,resultInCache);
             }
+            resultInCache.add(value);
         }
-        return convertResult;
+        taskCache.putAll(cache);
     }
 
-    public List<Object> firstCallThenRun(Config config){
-        TaskCache cache = new TaskCache();
-        List<Object> target = this.firstCall(cache,config);
-        this.run(config,target,cache);
-        return target;
-    }
-
-    private void run(Config config,Object target,TaskCache cache){
+    public void run(Config config,Object target){
         //每个任务一个单独的cache
+        TaskCache cache = new TaskCache();
+        this.initCache(config,cache);
         List<Task> initTaskList = finder.find(config,target);
         Queue<Task> nextStepTask = new ArrayDeque<>();
         nextStepTask.addAll(initTaskList);

@@ -1,9 +1,6 @@
 package com.fishedee.batch_call;
 
-import java.util.List;
-import java.util.function.Function;
-
-public class BatchCallRun<KeyType,CallResultType>{
+public class BatchCallRun{
 
     private Config config;
 
@@ -11,7 +8,7 @@ public class BatchCallRun<KeyType,CallResultType>{
         this.config = config;
     }
 
-    public BatchCallRun<KeyType,CallResultType> setBatchSize(int batchSize){
+    public BatchCallRun setBatchSize(int batchSize){
         if( batchSize <= 0 ){
             throw new InvalidArgumentException("batchSize ["+batchSize+"] must be positive");
         }
@@ -19,21 +16,16 @@ public class BatchCallRun<KeyType,CallResultType>{
         return this;
     }
 
-    public BatchCallRun<KeyType,CallResultType> setCacheEnabled(boolean cacheEnabled){
+    public BatchCallRun setCacheEnabled(boolean cacheEnabled){
+        if( this.config.isCallMode() == false && cacheEnabled == false ){
+            //查找数据数据的情况下，必须打开缓存
+            throw new InvalidArgumentException("In find mode ,cacheEnabled must be true");
+        }
         this.config.setCacheEnabled(cacheEnabled);
         return this;
     }
 
     public void run(Object target){
-        this.config.setFirstCallThenRun(false);
-        TaskRunner.sinlegton().directRun(this.config,target);
-    }
-
-    public<InitRunType> List<InitRunType> firstCallThenRun(List<KeyType> firstCallArgv, Function<CallResultType,KeyType> firstCallGetResultKey,Function<CallResultType,InitRunType> firstCallGetResultConvert){
-        this.config.setFirstCallThenRun(true);
-        this.config.setFirstCallArgu((List<Object>)firstCallArgv);
-        this.config.setFirstCallGetResultKey(firstCallGetResultKey);
-        this.config.setFirstCallGetResultConvert(firstCallGetResultConvert);
-        return (List<InitRunType>)TaskRunner.sinlegton().firstCallThenRun(this.config);
+        TaskRunner.sinlegton().run(this.config,target);
     }
 }

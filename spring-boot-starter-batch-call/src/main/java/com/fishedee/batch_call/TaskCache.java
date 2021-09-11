@@ -42,7 +42,7 @@ public class TaskCache {
         return result;
     }
 
-    public void putAll(List<Task> tasks,Map<Object,List<Object>> result){
+    public void putAll(Map<Object,List<Object>> result){
         this.cacheMap.putAll(result);
     }
 }

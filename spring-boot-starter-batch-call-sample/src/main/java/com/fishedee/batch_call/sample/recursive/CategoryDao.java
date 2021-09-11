@@ -16,6 +16,13 @@ public class CategoryDao {
     @Autowired
     private JdbcTemplate jdbcTemplate;
 
+    public List<Category> getBatch(List<Integer> ids){
+        return this.jdbcTemplate.query("select * from category where id in "+ SqlUtil.getQuestionSql(ids),
+                SqlUtil.getArgumentArray(ids),
+                SqlUtil.getTypeArray(ids,Types.INTEGER),
+                new BeanPropertyRowMapper<>(Category.class));
+    }
+
     public List<Category> getByParent(List<Integer> parentId){
         return this.jdbcTemplate.query("select * from category where parentId in "+ SqlUtil.getQuestionSql(parentId),
                 SqlUtil.getArgumentArray(parentId),

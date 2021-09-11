@@ -31,7 +31,7 @@ public class TaskExecutor {
         return objectList;
     }
 
-    public Map<Object,List<Object>> invokeKeyMatch(Config config,List<Task> tasks,Function callResultMatchByKey){
+    public Map<Object,List<Object>> invokeKeyMatch(Config config,List<Task> tasks){
         //聚合数据
         List<Object> invokeArguments = new ArrayList<>();
         for( Task task :tasks){
@@ -41,6 +41,8 @@ public class TaskExecutor {
         //批量调用
         Object invokeBean = config.getCallTarget();
         Object result = config.getCallFunc().apply(invokeBean,invokeArguments);
+        Function callResultMatchByKey = config.getCallResultMatchByKey();
+
         //获取结果
         List<Object> resultList = (List<Object>)result;
         //将结果转换为map

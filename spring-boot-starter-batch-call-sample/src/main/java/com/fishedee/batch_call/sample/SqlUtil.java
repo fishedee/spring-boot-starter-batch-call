@@ -25,4 +25,16 @@ public class SqlUtil {
         }
         return result;
     }
+
+    public static String getPrefixQuestionSql(List<?> data){
+        List<String> strings = new ArrayList<>();
+        for( int i = 0 ;i != data.size();i++){
+            strings.add("path like ?");
+        }
+        return String.join(" or ",strings);
+    }
+
+    public static Object[] getPrefixArgumentArray(List<String> data){
+        return data.stream().map((single)->single+'%').toArray();
+    }
 }
