@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.BiFunction;
+import java.util.function.Function;
 
 public class TaskExecutor {
 
@@ -29,7 +31,7 @@ public class TaskExecutor {
         return objectList;
     }
 
-    public Map<Object,List<Object>> invokeKeyMatch(Config config,List<Task> tasks){
+    public Map<Object,List<Object>> invokeKeyMatch(Config config,List<Task> tasks,Function callResultMatchByKey){
         //聚合数据
         List<Object> invokeArguments = new ArrayList<>();
         for( Task task :tasks){
@@ -44,7 +46,7 @@ public class TaskExecutor {
         //将结果转换为map
         Map<Object,List<Object>> mapResult = new HashMap<>();
         for( Object singleResult : resultList){
-            Object singleResultKey = config.getCallResultMatchByKey().apply(singleResult);
+            Object singleResultKey = callResultMatchByKey.apply(singleResult);
             List<Object> valueList = mapResult.get(singleResultKey);
             if( valueList == null ){
                 valueList = new ArrayList<>();

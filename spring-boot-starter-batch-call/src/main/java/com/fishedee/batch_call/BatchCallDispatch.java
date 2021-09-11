@@ -12,41 +12,41 @@ public class BatchCallDispatch<KeyObjectType,CallResultType,KeyType> {
         this.config = config;
     }
 
-    public<ReturnType> BatchCallRun<KeyType,ReturnType> dispatch(BiFunction<KeyObjectType, CallResultType,ReturnType> dispatchFunc){
+    public<ReturnType> BatchCallRun<KeyType,CallResultType> dispatch(BiFunction<KeyObjectType, CallResultType,ReturnType> dispatchFunc){
         this.config.setHasDispatchFunc(true);
         this.config.setDispatchFunc(dispatchFunc);
-        return new BatchCallRun<KeyType,ReturnType>(this.config);
+        return new BatchCallRun<>(this.config);
     }
 
-    public BatchCallRun<KeyType,Void> dispatch(BiFunctionVoid<KeyObjectType, CallResultType> dispatchFunc){
+    public BatchCallRun<KeyType,CallResultType> dispatch(BiFunctionVoid<KeyObjectType, CallResultType> dispatchFunc){
         this.config.setHasDispatchFunc(true);
         this.config.setDipatchFuncArguListType(false);
         this.config.setDispatchFunc((Object a,Object b)->{
             dispatchFunc.apply((KeyObjectType)a,(CallResultType)b);
             return null;
         });
-        return new BatchCallRun<KeyType,Void>(this.config);
+        return new BatchCallRun<>(this.config);
     }
 
-    public<ReturnType> BatchCallRun<KeyType,ReturnType> groupAndThenDispatch(BiFunction<KeyObjectType, List<CallResultType>,ReturnType> dispatchFunc){
+    public<ReturnType> BatchCallRun<KeyType,CallResultType> groupThenDispatch(BiFunction<KeyObjectType, List<CallResultType>,ReturnType> dispatchFunc){
         this.config.setHasDispatchFunc(true);
         this.config.setDipatchFuncArguListType(true);
         this.config.setDispatchFunc(dispatchFunc);
-        return new BatchCallRun<KeyType,ReturnType>(this.config);
+        return new BatchCallRun<>(this.config);
     }
 
-    public BatchCallRun<KeyType,Void> groupAndThenDispatch(BiFunctionVoid<KeyObjectType, List<CallResultType>> dispatchFunc){
+    public BatchCallRun<KeyType,CallResultType> groupThenDispatch(BiFunctionVoid<KeyObjectType, List<CallResultType>> dispatchFunc){
         this.config.setHasDispatchFunc(true);
         this.config.setDipatchFuncArguListType(true);
         this.config.setDispatchFunc((Object a,Object b)->{
             dispatchFunc.apply((KeyObjectType)a,(List<CallResultType>)b);
             return null;
         });
-        return new BatchCallRun<KeyType, Void>(this.config);
+        return new BatchCallRun<>(this.config);
     }
 
-    public BatchCallRun<KeyType,Void> noDispatch(){
+    public BatchCallRun<KeyType,CallResultType> noDispatch(){
         this.config.setHasDispatchFunc(false);
-        return new BatchCallRun<KeyType,Void>(this.config);
+        return new BatchCallRun<>(this.config);
     }
 }

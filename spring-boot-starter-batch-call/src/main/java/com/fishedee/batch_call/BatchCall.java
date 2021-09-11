@@ -18,7 +18,7 @@ public class BatchCall<KeyObjectType,KeyType> {
         });
         this.config.setCallTarget(callTarget);
         this.config.setMatcher(ResultMatch.SEQUENCE);
-        return new BatchCallVoidDispatch<KeyObjectType>(this.config);
+        return new BatchCallVoidDispatch<>(this.config);
     }
 
     public <CallTargetType,CallResultType> BatchCallDispatch<KeyObjectType,CallResultType,KeyType> call(CallTargetType callTarget, BiFunction<CallTargetType, List<KeyType>,List<CallResultType>> callFunc){

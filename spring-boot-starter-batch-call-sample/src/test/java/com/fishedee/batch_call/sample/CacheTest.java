@@ -80,7 +80,7 @@ public class CacheTest {
         new BatchCallTask()
                 .collectKey(People2.class,People2::getUserId)
                 .call(userDao,UserDao::getBatch2,new ResultMatchByKey<>(User::getId))
-                .groupAndThenDispatch(People2::setUserRecursive2)
+                .groupThenDispatch(People2::setUserRecursive2)
                 .run(listPeople);
 
         assertEquals(3,userDao.getGetBatch2CallArgv().size());
@@ -104,7 +104,7 @@ public class CacheTest {
         new BatchCallTask()
                 .collectKey(People2.class,People2::getUserId)
                 .call(userDao,UserDao::getBatch2,new ResultMatchByKey<>(User::getId))
-                .groupAndThenDispatch(People2::setUserRecursive2)
+                .groupThenDispatch(People2::setUserRecursive2)
                 .setCacheEnabled(true)
                 .run(listPeople);
 

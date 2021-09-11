@@ -3,7 +3,6 @@ package com.fishedee.batch_call.sample;
 import com.fishedee.batch_call.BatchCallTask;
 import com.fishedee.batch_call.ResultMatchByKey;
 import com.fishedee.batch_call.autoconfig.BatchCallAutoConfiguration;
-import com.fishedee.batch_call.sample.basic.UserDao;
 import com.fishedee.batch_call.sample.recursive.Category;
 import com.fishedee.batch_call.sample.recursive.CategoryDTO;
 import com.fishedee.batch_call.sample.recursive.CategoryDao;
@@ -15,6 +14,7 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.FilterType;
 import org.springframework.context.annotation.Import;
 
+import java.util.Arrays;
 import java.util.List;
 
 @DataJpaTest(includeFilters = @ComponentScan.Filter(
@@ -37,7 +37,7 @@ public class RecursiveTest {
         new BatchCallTask()
                 .collectKey(CategoryDTO.class,CategoryDTO::getId)
                 .call(categoryDao,CategoryDao::getByParent,new ResultMatchByKey<>(Category::getParentId))
-                .groupAndThenDispatch(CategoryDTO::setChildren)
+                .groupThenDispatch(CategoryDTO::setChildren)
                 .setCacheEnabled(true)
                 .run(categoryDTO);
 
@@ -49,10 +49,9 @@ public class RecursiveTest {
         List<CategoryDTO> result = new BatchCallTask()
                 .collectKey(CategoryDTO.class,CategoryDTO::getId)
                 .call(categoryDao,CategoryDao::getByParent,new ResultMatchByKey<>(Category::getParentId))
-                .groupAndThenDispatch(CategoryDTO::setChildren)
+                .groupThenDispatch(CategoryDTO::setChildren)
                 .setCacheEnabled(true)
-                .firstSkipCollectAndThenCall(0)
-                .run();
+                .firstCallThenRun(Arrays.asList(30001),Category::getId,CategoryDTO::new);
 
         log.info("{}",result);
     }

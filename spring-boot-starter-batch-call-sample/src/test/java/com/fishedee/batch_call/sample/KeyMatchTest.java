@@ -81,7 +81,7 @@ public class KeyMatchTest {
         new BatchCallTask()
                 .collectKey(ParkingDTO.Floor.class,ParkingDTO.Floor::getDriverId)
                 .call(carDao,CarDao::getByDriverId,new ResultMatchByKey<>(Car::getDriverId))
-                .groupAndThenDispatch(ParkingDTO.Floor::setCarList)
+                .groupThenDispatch(ParkingDTO.Floor::setCarList)
                 .run(parkingDTO);
 
         assertEquals(3,parkingDTO.getFloorList().size());

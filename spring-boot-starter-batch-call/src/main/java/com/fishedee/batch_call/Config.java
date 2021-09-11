@@ -2,6 +2,7 @@ package com.fishedee.batch_call;
 
 import lombok.Data;
 
+import java.util.List;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
@@ -18,10 +19,19 @@ public class Config {
     private BiFunction dispatchFunc;
 
     //是否首次越过skipCollect
-    private boolean isFirstSkipCollectAndThenCall;
+    private boolean isFirstCallThenRun;
 
     //首次调用call的参数，仅在isFirstSkipCollect为true时有效
-    private Object firstCallArgu;
+    //输入参数
+    private List<Object> firstCallArgu;
+
+    //首次调用call的参数，仅在isFirstSkipCollect为true时有效
+    //输出结果后获取key
+    private Function firstCallGetResultKey;
+
+    //首次调用call的参数，仅在isFirstSkipCollect为true时有效
+    //将结果进行转换
+    private Function firstCallGetResultConvert;
 
     //是否有对象回调方法
     private boolean hasDispatchFunc;
