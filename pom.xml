@@ -4,7 +4,7 @@
 
   <groupId>com.fishedee.batch_call</groupId>
   <artifactId>spring-boot-starter-batch-call</artifactId>
-  <version>1.0</version>
+  <version>1.1</version>
   <packaging>jar</packaging>
 
   <name>spring-boot-starter-batch-call</name>

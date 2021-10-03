@@ -6,10 +6,9 @@ import lombok.extern.slf4j.Slf4j;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Slf4j
@@ -21,8 +20,12 @@ public class TaskFinder {
 
     private final Map<Class, ClassInfo> configMap;
 
+    private final Set<Class> basicType;
+
     public TaskFinder(){
         this.configMap = new ConcurrentHashMap<>();
+        this.basicType = new HashSet<>();
+        this.initBasicType();
     }
 
     private Method isValidKeyMethod(Method method){
@@ -55,6 +58,27 @@ public class TaskFinder {
         }
     }
 
+    private void initBasicType(){
+        this.basicType.add(Integer.class);
+        this.basicType.add(int.class);
+        this.basicType.add(Character.class);
+        this.basicType.add(char.class);
+        this.basicType.add(Byte.class);
+        this.basicType.add(byte.class);
+        this.basicType.add(Short.class);
+        this.basicType.add(short.class);
+        this.basicType.add(Long.class);
+        this.basicType.add(long.class);
+        this.basicType.add(Float.class);
+        this.basicType.add(float.class);
+        this.basicType.add(Double.class);
+        this.basicType.add(double.class);
+        this.basicType.add(String.class);
+        this.basicType.add(Date.class);
+        this.basicType.add(BigDecimal.class);
+        this.basicType.add(BigInteger.class);
+    }
+
     private void calcuateClassFieldInfo(Class clazz, ClassInfo result){
         //先去查找Field
         Class parentClazz = clazz;
@@ -66,7 +90,8 @@ public class TaskFinder {
                 //集合类型的话我们就尝试一下进行嵌套查找
                 if( List.class.isAssignableFrom(fieldClass) ||
                         Set.class.isAssignableFrom(fieldClass) ||
-                        Map.class.isAssignableFrom(fieldClass)){
+                        Map.class.isAssignableFrom(fieldClass) ||
+                        basicType.contains(fieldClass) == false ){
                     //尝试获取对应的方法
                     Method method = tryGetterMethod(clazz,field);
                     if( method == null ){
