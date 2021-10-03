@@ -42,7 +42,7 @@ TODO功能：
     <dependency>
         <groupId>com.github.fishedee</groupId>
         <artifactId>spring-boot-starter-batch-call</artifactId>
-        <version>1.0</version>
+        <version>1.1</version>
     </dependency>
 </dependencies>
 ```

@@ -5,6 +5,7 @@ import com.fishedee.batch_call.JsonAssertUtil;
 import com.fishedee.batch_call.ResultMatchByKey;
 import com.fishedee.batch_call.autoconfig.BatchCallAutoConfiguration;
 import com.fishedee.batch_call.sample.basic.RecipeDTO;
+import com.fishedee.batch_call.sample.basic.RecipeDTO2;
 import com.fishedee.batch_call.sample.basic.User;
 import com.fishedee.batch_call.sample.basic.UserDao;
 import com.fishedee.batch_call.sample.generic.*;
@@ -73,6 +74,24 @@ public class FinderTest {
         assertEquals("fish",step.getName());
         assertEquals(12,step.getLevel());
     }
+
+    @Test
+    public void testSingleNested(){
+        RecipeDTO2 dto2 = new RecipeDTO2();
+        dto2.getKkList().add( new RecipeDTO2.KK(this.recipeDTO));
+        dto2.getKkList().add( new RecipeDTO2.KK(this.recipeDTO));
+        this.runTask(dto2);
+
+        for( int i = 0 ;i != 2 ;i++){
+            RecipeDTO recipeDTO = dto2.getKkList().get(0).getRecipeDTO();
+            JsonAssertUtil.checkEqualStrict("{name:'fish',level:12,userId:10001,decription:null}",recipeDTO.getStepList().get(0));
+            JsonAssertUtil.checkEqualStrict("{name:'dog',level:56,userId:10003,decription:null}",recipeDTO.getStepList().get(1));
+            JsonAssertUtil.checkEqualStrict("{name:'cat',level:34,userId:10002,decription:null}",recipeDTO.getStepList().get(2));
+            JsonAssertUtil.checkEqualStrict("{name:'fish',level:12,userId:10001,decription:null}",recipeDTO.getStepList().get(3));
+
+        }
+    }
+
     @Test
     public void testList(){
         this.runTask(recipeDTO);

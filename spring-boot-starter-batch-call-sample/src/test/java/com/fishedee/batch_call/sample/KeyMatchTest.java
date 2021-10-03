@@ -177,7 +177,7 @@ public class KeyMatchTest {
 
     @Test
     public void keyMatchAndDispatchNotFound(){
-        assertThrows(CallResultNotFoundException.class,()->{
+        CallResultNotFoundException e = assertThrows(CallResultNotFoundException.class,()->{
             RecipeDTO.Step step = new RecipeDTO.Step();
             step.setUserId(10005);
 
@@ -187,5 +187,6 @@ public class KeyMatchTest {
                     .dispatch(RecipeDTO.Step::setUser)
                     .run(step);
         });
+        assertEquals(e.getMessage(),"在com.fishedee.batch_call.sample.basic.UserDao中找不到ID为10005结果");
     }
 }
