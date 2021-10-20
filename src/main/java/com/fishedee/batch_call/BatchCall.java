@@ -2,6 +2,7 @@ package com.fishedee.batch_call;
 
 import java.util.List;
 import java.util.function.BiFunction;
+import java.util.function.Function;
 
 public class BatchCall<KeyObjectType,KeyType> {
 
@@ -40,7 +41,10 @@ public class BatchCall<KeyObjectType,KeyType> {
         return new BatchCallDispatch<>(this.config);
     }
 
-    public <CallTargetType,CallResultType> BatchCallDispatch<KeyObjectType,CallResultType> call(CallTargetType callTarget, BiFunction<CallTargetType, List<KeyType>,List<CallResultType>> callFunc,ResultMatchByKey<CallResultType,KeyType> matcherByKey,CallResultType defaultResult){
+    public <CallTargetType,CallResultType> BatchCallDispatch<KeyObjectType,CallResultType> call(CallTargetType callTarget, BiFunction<CallTargetType, List<KeyType>,List<CallResultType>> callFunc, ResultMatchByKey<CallResultType,KeyType> matcherByKey, Function<KeyObjectType,CallResultType> defaultResult){
+        if( defaultResult == null ){
+            throw new InvalidArgumentException("默认值闭包不能为null");
+        }
         this.config.setCallMode(true);
         this.config.setCallFunc(callFunc);
         this.config.setCallTarget(callTarget);
@@ -62,7 +66,10 @@ public class BatchCall<KeyObjectType,KeyType> {
         return new BatchCallDispatch<>(this.config);
     }
 
-    public <CallResultType> BatchCallDispatch<KeyObjectType,CallResultType> find(List<CallResultType>  findResult,ResultMatchByKey<CallResultType,KeyType> matcherByKey,CallResultType defaultResult){
+    public <CallResultType> BatchCallDispatch<KeyObjectType,CallResultType> find(List<CallResultType>  findResult,ResultMatchByKey<CallResultType,KeyType> matcherByKey,Function<KeyObjectType,CallResultType> defaultResult){
+        if( defaultResult == null ){
+            throw new InvalidArgumentException("默认值闭包不能为null");
+        }
         this.config.setCallMode(false);
         this.config.setCacheEnabled(true);
         this.config.setCallTarget(findResult);
