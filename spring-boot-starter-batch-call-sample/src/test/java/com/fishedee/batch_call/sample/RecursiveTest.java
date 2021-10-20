@@ -222,7 +222,7 @@ public class RecursiveTest {
 
         new BatchCallTask()
                 .collectKey(Category2.class,Category2::getId)
-                .find(allCategory,new ResultMatchByKey<>(Category2::getParentId),null)
+                .find(allCategory,new ResultMatchByKey<>(Category2::getParentId),(category)->null)
                 .dispatch(Category2::setChildren2)
                 .run(target);
 
@@ -270,7 +270,7 @@ public class RecursiveTest {
         assertThrows(CallResultMultiplyConfuseException.class,()->{
             new BatchCallTask()
                     .collectKey(Category2.class,Category2::getId)
-                    .find(allCategory,new ResultMatchByKey<>(Category2::getParentId),null)
+                    .find(allCategory,new ResultMatchByKey<>(Category2::getParentId),(category3)->null)
                     .dispatch(Category2::setChildren2)
                     .run(target);
         });

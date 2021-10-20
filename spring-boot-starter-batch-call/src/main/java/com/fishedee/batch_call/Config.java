@@ -43,7 +43,7 @@ public class Config {
     private Function callResultMatchByKey;
 
     //KEY匹配方式时的默认值
-    private Object callResultMatchByKeyDefault;
+    private Function callResultMatchByKeyDefault;
 
     //KEY匹配方式是否有默认值
     private boolean hasCallResultMatchByKeyDefault;

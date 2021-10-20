@@ -12,6 +12,7 @@ import org.springframework.context.annotation.FilterType;
 import org.springframework.context.annotation.Import;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -143,7 +144,7 @@ public class KeyMatchTest {
         User defaultUser = new User(0,"default",123);
         new BatchCallTask()
                 .collectKey(RecipeDTO.Step.class,RecipeDTO.Step::getUserId)
-                .call(userDao,UserDao::getBatch,new ResultMatchByKey<>(User::getId),defaultUser)
+                .call(userDao,UserDao::getBatch,new ResultMatchByKey<>(User::getId),(userStep)->defaultUser)
                 .dispatch(RecipeDTO.Step::setUser)
                 .run(step);
 
@@ -157,12 +158,54 @@ public class KeyMatchTest {
 
         new BatchCallTask()
                 .collectKey(RecipeDTO.Step.class,RecipeDTO.Step::getUserId)
-                .call(userDao,UserDao::getBatch,new ResultMatchByKey<>(User::getId),null)
+                .call(userDao,UserDao::getBatch,new ResultMatchByKey<>(User::getId),(userStep)->null)
                 .dispatch(RecipeDTO.Step::setUser2)
                 .run(step);
 
         JsonAssertUtil.checkEqualStrict("{name:null,level:0,userId:10005,decription:null}",step);
     }
+
+    @Test
+    public void keyMatchAndDispatchDefaultNotNullDependStep(){
+        RecipeDTO.Step step = new RecipeDTO.Step();
+        step.setUserId(10005);
+
+        new BatchCallTask()
+                .collectKey(RecipeDTO.Step.class,RecipeDTO.Step::getUserId)
+                .call(userDao,UserDao::getBatch,new ResultMatchByKey<>(User::getId),(userStep)->new User(userStep.getUserId(),userStep.getUserId()+"X",10))
+                .dispatch(RecipeDTO.Step::setUser2)
+                .run(step);
+
+        JsonAssertUtil.checkEqualStrict("{name:\"10005X\",level:10,userId:10005,decription:null}",step);
+    }
+
+    private  int callTime = 0;
+
+    @Test
+    public void keyMatchAndDispatchDefaultNotNullDependStepMultiply(){
+        RecipeDTO.Step step = new RecipeDTO.Step();
+        step.setUserId(10005);
+
+        RecipeDTO.Step step2 = new RecipeDTO.Step();
+        step2.setUserId(10005);
+
+        List<RecipeDTO.Step> stepList = Arrays.asList(step,step2);
+
+        this.callTime = 0;
+        new BatchCallTask()
+                .collectKey(RecipeDTO.Step.class,RecipeDTO.Step::getUserId)
+                .call(userDao,UserDao::getBatch,new ResultMatchByKey<>(User::getId),(userStep)->{
+                    this.callTime++;
+                    return new User(userStep.getUserId(),userStep.getUserId()+"X",10);
+                })
+                .dispatch(RecipeDTO.Step::setUser2)
+                .run(stepList);
+
+        assertEquals(callTime,1);
+        JsonAssertUtil.checkEqualStrict("[{name:\"10005X\",level:10,userId:10005,decription:null}," +
+                "{name:\"10005X\",level:10,userId:10005,decription:null}]",stepList);
+    }
+
 
     @Test
     public void keyMatchAndDispatchConfuse(){

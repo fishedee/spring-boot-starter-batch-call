@@ -68,14 +68,14 @@ public class TaskRunner {
                         result.put(task.getKey(),new ArrayList<>());
                     }
                 }
-                if( cacheEnabled ){
-                    //开启缓存的情况下，将数据放入缓存
-                    cache.putAll(result);
-                }
                 if( hasDispatcherFunc ) {
                     //有数据分发操作
                     List<Object> dispatchResult = dispatcher.dispatchKeyMatch(config, taskCacheResult.getNoCacheTask(), result);
                     nextStepCallback.apply(dispatchResult);
+                }
+                if( cacheEnabled ){
+                    //开启缓存的情况下，将数据放入缓存
+                    cache.putAll(result);
                 }
             }
         }else{

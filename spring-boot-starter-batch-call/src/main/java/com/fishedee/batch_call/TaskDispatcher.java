@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.function.BiFunction;
+import java.util.function.Function;
 
 @Slf4j
 public class TaskDispatcher {
@@ -17,7 +18,6 @@ public class TaskDispatcher {
 
         //回调数据
         BiFunction dispatchFunc = config.getDispatchFunc();
-        Object defaultResult = config.getCallResultMatchByKeyDefault();
         for( int i = 0 ;i != taskList.size();i++){
             Task task = taskList.get(i);
             List<Object> result = resultMap.get(task.getKey());
@@ -29,6 +29,10 @@ public class TaskDispatcher {
                 //参数不是List类型
                 if( result.size() == 0  ){
                     if( allowResultNotFound ){
+                        //找不到的情况下，调用默认值函数，并且放入到Map中
+                        Function defaultResultCall = config.getCallResultMatchByKeyDefault();
+                        Object defaultResult = defaultResultCall.apply(task.getInstance());
+                        result.add(defaultResult);
                         nextStep = dispatchFunc.apply(task.getInstance(),defaultResult);
                     }else{
                         throw new CallResultNotFoundException(targetClass,task.getKey());
